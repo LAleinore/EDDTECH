@@ -6,6 +6,7 @@ import '../../../app/theme/app_colors.dart';
 import '../../../core/widgets/buttons.dart';
 import '../../../core/widgets/cards.dart';
 import '../../../core/widgets/inputs.dart';
+import '../../admin/data/admin_repository.dart';
 import '../data/auth_repository.dart';
 import '../domain/user_model.dart';
 
@@ -21,6 +22,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _schoolController = TextEditingController();
+  final _cityController = TextEditingController();
+  final _subjectController = TextEditingController();
+
   UserRole _selectedRole = UserRole.teacher;
   final String _selectedLang = 'ru';
   bool _consentAgreed = false;
@@ -31,6 +36,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _schoolController.dispose();
+    _cityController.dispose();
+    _subjectController.dispose();
     super.dispose();
   }
 
@@ -44,6 +52,21 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     }
 
     if (_formKey.currentState?.validate() ?? false) {
+      final isTeacher = _selectedRole == UserRole.teacher;
+      final generatedCode = 'TCH-${(DateTime.now().millisecondsSinceEpoch % 9000 + 1000)}-KZ';
+
+      if (isTeacher) {
+        // Register in admin approval queue
+        ref.read(adminApplicationsProvider.notifier).submitNewApplication(
+          fullName: _nameController.text.trim(),
+          email: _emailController.text.trim(),
+          school: _schoolController.text.trim().isEmpty ? 'Общеобразовательная школа' : _schoolController.text.trim(),
+          city: _cityController.text.trim().isEmpty ? 'г. Астана' : _cityController.text.trim(),
+          subject: _subjectController.text.trim().isEmpty ? 'Общие дисциплины' : _subjectController.text.trim(),
+          teacherCode: generatedCode,
+        );
+      }
+
       ref
           .read(authNotifierProvider.notifier)
           .register(
@@ -52,6 +75,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             password: _passwordController.text,
             role: _selectedRole,
             language: _selectedLang,
+            school: isTeacher ? _schoolController.text.trim() : null,
+            city: isTeacher ? _cityController.text.trim() : null,
+            subject: isTeacher ? _subjectController.text.trim() : null,
+            teacherCode: isTeacher ? generatedCode : null,
           );
     }
   }
@@ -95,8 +122,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   hint: 'Иван Иванов / Айгүл Серікқызы',
                   prefixIcon: Icons.person_outline,
                   validator: (val) {
-                    if (val == null || val.trim().isEmpty)
+                    if (val == null || val.trim().isEmpty) {
                       return loc.tr('field_required');
+                    }
                     return null;
                   },
                 ),
@@ -109,8 +137,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   prefixIcon: Icons.email_outlined,
                   keyboardType: TextInputType.emailAddress,
                   validator: (val) {
-                    if (val == null || val.trim().isEmpty)
+                    if (val == null || val.trim().isEmpty) {
                       return loc.tr('field_required');
+                    }
                     if (!val.contains('@')) return loc.tr('invalid_email');
                     return null;
                   },
@@ -134,8 +163,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         setState(() => _obscurePassword = !_obscurePassword),
                   ),
                   validator: (val) {
-                    if (val == null || val.trim().isEmpty)
+                    if (val == null || val.trim().isEmpty) {
                       return loc.tr('field_required');
+                    }
                     if (val.length < 6) return loc.tr('short_password');
                     return null;
                   },
@@ -143,9 +173,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 const SizedBox(height: 20),
 
                 // Role Selection
-                Text(
-                  loc.tr('select_role'),
-                  style: const TextStyle(
+                const Text(
+                  'Выберите роль в образовательной экосистеме',
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
@@ -153,9 +183,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 const SizedBox(height: 8),
 
                 _RoleSelectionCard(
-                  title: loc.tr('role_teacher'),
-                  subtitle: loc.tr('module_teacher_desc'),
-                  icon: Icons.school_outlined,
+                  title: 'Преподаватель (Daryn Ustaz)',
+                  subtitle: 'Создание поурочных планов, тестов и аналитика успеваемости',
+                  icon: Icons.school_rounded,
                   color: AppColors.teacherAccent,
                   isSelected: _selectedRole == UserRole.teacher,
                   onTap: () => setState(() => _selectedRole = UserRole.teacher),
@@ -163,9 +193,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 const SizedBox(height: 8),
 
                 _RoleSelectionCard(
-                  title: loc.tr('role_student'),
-                  subtitle: loc.tr('module_mindcare_desc'),
-                  icon: Icons.spa_outlined,
+                  title: 'Учащийся (Обучение & MindCare)',
+                  subtitle: 'Интерактивные курсы, тренажеры и эмоциональная поддержка',
+                  icon: Icons.psychology_rounded,
                   color: AppColors.mindcareAccent,
                   isSelected: _selectedRole == UserRole.student,
                   onTap: () => setState(() => _selectedRole = UserRole.student),
@@ -173,14 +203,93 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 const SizedBox(height: 8),
 
                 _RoleSelectionCard(
-                  title: loc.tr('role_learner'),
-                  subtitle: loc.tr('module_inclusive_desc'),
-                  icon: Icons.accessibility_new_outlined,
+                  title: 'Инклюзивный ученик (Inclusive AI)',
+                  subtitle: 'Специальные возможности, озвучивание текста и упрощение тем',
+                  icon: Icons.accessibility_new_rounded,
                   color: AppColors.inclusiveAccent,
                   isSelected: _selectedRole == UserRole.learner,
                   onTap: () => setState(() => _selectedRole = UserRole.learner),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
+
+                // Teacher Accreditation Fields (Conditional)
+                if (_selectedRole == UserRole.teacher) ...[
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.teacherAccent.withOpacity(0.06),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.teacherAccent.withOpacity(0.3)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.verified_user_outlined, color: AppColors.teacherAccent, size: 20),
+                            SizedBox(width: 8),
+                            Text(
+                              'Верификация учебного заведения',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.teacherAccent,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Для предотвращения несанкционированного доступа заявка учителя направляется на модерацию Администрации.',
+                          style: TextStyle(fontSize: 11, color: AppColors.secondaryTextLight),
+                        ),
+                        const SizedBox(height: 14),
+
+                        CustomTextField(
+                          controller: _schoolController,
+                          label: 'Школа / Учебное заведение',
+                          hint: 'Например: НИШ ФМН г. Астана / Лицей №134',
+                          prefixIcon: Icons.apartment_rounded,
+                          validator: (val) {
+                            if (_selectedRole == UserRole.teacher && (val == null || val.trim().isEmpty)) {
+                              return 'Укажите название вашей школы';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 12),
+
+                        CustomTextField(
+                          controller: _cityController,
+                          label: 'Город / Населенный пункт',
+                          hint: 'Например: г. Астана, г. Алматы',
+                          prefixIcon: Icons.location_city_rounded,
+                          validator: (val) {
+                            if (_selectedRole == UserRole.teacher && (val == null || val.trim().isEmpty)) {
+                              return 'Укажите ваш город';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 12),
+
+                        CustomTextField(
+                          controller: _subjectController,
+                          label: 'Предмет преподавания',
+                          hint: 'Например: Математика, Информатика, Физика',
+                          prefixIcon: Icons.menu_book_rounded,
+                          validator: (val) {
+                            if (_selectedRole == UserRole.teacher && (val == null || val.trim().isEmpty)) {
+                              return 'Укажите преподаваемый предмет';
+                            }
+                            return null;
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
 
                 // Consent Checkbox
                 Row(
@@ -196,11 +305,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       child: GestureDetector(
                         onTap: () =>
                             setState(() => _consentAgreed = !_consentAgreed),
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 10),
+                        child: const Padding(
+                          padding: EdgeInsets.only(top: 10),
                           child: Text(
-                            loc.tr('data_consent'),
-                            style: const TextStyle(fontSize: 12),
+                            'Я подтверждаю достоверность указанных данных и даю согласие на обработку образовательной информации',
+                            style: TextStyle(fontSize: 12),
                           ),
                         ),
                       ),
@@ -210,7 +319,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 const SizedBox(height: 20),
 
                 PrimaryButton(
-                  text: loc.tr('create_account'),
+                  text: _selectedRole == UserRole.teacher
+                      ? 'Отправить заявку на аккредитацию'
+                      : loc.tr('create_account'),
                   isLoading: authState.isLoading,
                   onPressed: _submit,
                 ),
@@ -306,7 +417,7 @@ class _RoleSelectionCard extends StatelessWidget {
               ],
             ),
           ),
-          if (isSelected) Icon(Icons.check_circle, color: color, size: 20),
+          if (isSelected) Icon(Icons.check_circle_rounded, color: color, size: 20),
         ],
       ),
     );

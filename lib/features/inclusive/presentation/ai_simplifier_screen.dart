@@ -122,12 +122,18 @@ class _AiSimplifierScreenState extends ConsumerState<AiSimplifierScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        '💡 Простое объяснение',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      const Row(
+                        children: [
+                          Icon(Icons.lightbulb_outline_rounded, color: AppColors.warning, size: 18),
+                          SizedBox(width: 6),
+                          Text(
+                            'Простое объяснение',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 8),
                       Text(
@@ -135,12 +141,18 @@ class _AiSimplifierScreenState extends ConsumerState<AiSimplifierScreen> {
                         style: const TextStyle(fontSize: 14, height: 1.5),
                       ),
                       const SizedBox(height: 12),
-                      const Text(
-                        '📌 Главная суть:',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
+                      const Row(
+                        children: [
+                          Icon(Icons.bookmark_border_rounded, color: AppColors.primary, size: 16),
+                          SizedBox(width: 6),
+                          Text(
+                            'Главная суть:',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 4),
                       Text(

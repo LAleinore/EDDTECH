@@ -12,7 +12,14 @@ import '../features/ai_assistant/presentation/ai_assistant_screen.dart';
 import '../features/profile/presentation/profile_screen.dart';
 import '../features/notifications/presentation/notifications_screen.dart';
 
+// Admin Screen
+import '../features/admin/presentation/admin_screen.dart';
+
+// Learning Hub Screen
+import '../features/learning/presentation/learning_hub_screen.dart';
+
 // Teacher Screens
+import '../features/teacher/presentation/teacher_portal_screen.dart';
 import '../features/teacher/presentation/lesson_generator_screen.dart';
 import '../features/teacher/presentation/quiz_generator_screen.dart';
 import '../features/teacher/presentation/quiz_taking_screen.dart';
@@ -77,6 +84,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
+                path: '/learning',
+                builder: (context, state) => const LearningHubScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
                 path: '/assistant',
                 builder: (context, state) => const AiAssistantScreen(),
               ),
@@ -101,12 +116,22 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
 
+      // Admin Portal
+      GoRoute(
+        path: '/admin',
+        builder: (context, state) => const AdminScreen(),
+      ),
+
       // Standalone Feature Routes
       GoRoute(
         path: '/notifications',
         builder: (context, state) => const NotificationsScreen(),
       ),
       // Teacher
+      GoRoute(
+        path: '/teacher/portal',
+        builder: (context, state) => const TeacherPortalScreen(),
+      ),
       GoRoute(
         path: '/teacher/lesson-generator',
         builder: (context, state) => const LessonGeneratorScreen(),

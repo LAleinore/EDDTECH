@@ -226,7 +226,7 @@ class _LessonGeneratorScreenState extends ConsumerState<LessonGeneratorScreen> {
 
                 // Objectives
                 _SectionCard(
-                  title: '🎯 Цели урока',
+                  title: 'Цели урока (Критерии успеха)',
                   content: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: _generatedPlan!.objectives
@@ -278,7 +278,7 @@ class _LessonGeneratorScreenState extends ConsumerState<LessonGeneratorScreen> {
                           (b) => Padding(
                             padding: const EdgeInsets.symmetric(vertical: 3),
                             child: Text(
-                              '📌 $b',
+                              '• $b',
                               style: const TextStyle(fontSize: 13, height: 1.4),
                             ),
                           ),

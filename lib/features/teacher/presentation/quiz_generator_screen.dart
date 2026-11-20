@@ -239,7 +239,7 @@ class _QuizGeneratorScreenState extends ConsumerState<QuizGeneratorScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            '💡 Пояснение: ${q.explanation}',
+                            'Пояснение: ${q.explanation}',
                             style: const TextStyle(
                               fontSize: 11,
                               color: AppColors.secondaryTextLight,

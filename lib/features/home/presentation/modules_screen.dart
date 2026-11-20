@@ -5,6 +5,7 @@ import '../../../app/localization/app_localizations.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../core/widgets/cards.dart';
 import '../../auth/data/auth_repository.dart';
+import '../../auth/domain/user_model.dart';
 
 class ModulesScreen extends ConsumerWidget {
   const ModulesScreen({super.key});
@@ -13,6 +14,7 @@ class ModulesScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authNotifierProvider).user;
     final loc = AppLocalizations(AppLanguage.fromCode(user?.language ?? 'ru'));
+    final isAdmin = user?.role == UserRole.admin;
 
     return Scaffold(
       appBar: AppBar(title: Text(loc.tr('nav_modules'))),
@@ -20,21 +22,48 @@ class ModulesScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            // 1. Daryn Ustaz
+            // 1. Learning Hub
+            _ModuleCategoryCard(
+              title: 'Интерактивное Обучение',
+              subtitle: 'Учебные курсы, практика и тесты',
+              description: 'Учебная программа по математике, физике, программированию и языкам с автоматической проверкой.',
+              icon: Icons.menu_book_rounded,
+              color: AppColors.primary,
+              actions: [
+                _ActionItem(
+                  'Каталог курсов',
+                  Icons.auto_stories_rounded,
+                  () => context.push('/learning'),
+                ),
+                _ActionItem(
+                  'Тренажер тестов',
+                  Icons.assignment_turned_in_rounded,
+                  () => context.push('/learning'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // 2. Daryn Ustaz (Teacher Portal)
             _ModuleCategoryCard(
               title: loc.tr('module_teacher_title'),
-              subtitle: loc.tr('module_teacher_sub'),
-              description: loc.tr('module_teacher_desc'),
+              subtitle: 'Платформа верифицированных учителей',
+              description: 'Аккредитованная рабочая среда преподавателя: генерация ҚМЖ, БЖБ/ТЖБ и адаптация тем.',
               icon: Icons.school_rounded,
               color: AppColors.teacherAccent,
               actions: [
                 _ActionItem(
-                  'Генератор уроков',
+                  'Портал преподавателя',
+                  Icons.dashboard_customize_rounded,
+                  () => context.push('/teacher/portal'),
+                ),
+                _ActionItem(
+                  'Генератор уроков (ҚМЖ)',
                   Icons.menu_book,
                   () => context.push('/teacher/lesson-generator'),
                 ),
                 _ActionItem(
-                  'Конструктор тестов',
+                  'Конструктор тестов (БЖБ/ТЖБ)',
                   Icons.quiz,
                   () => context.push('/teacher/quiz-generator'),
                 ),
@@ -44,7 +73,7 @@ class ModulesScreen extends ConsumerWidget {
                   () => context.push('/teacher/explain'),
                 ),
                 _ActionItem(
-                  'История материалов',
+                  'Архив материалов',
                   Icons.history,
                   () => context.push('/teacher/history'),
                 ),
@@ -52,7 +81,7 @@ class ModulesScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 20),
 
-            // 2. MindCare
+            // 3. MindCare
             _ModuleCategoryCard(
               title: loc.tr('module_mindcare_title'),
               subtitle: loc.tr('module_mindcare_sub'),
@@ -79,7 +108,7 @@ class ModulesScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 20),
 
-            // 3. Inclusive AI
+            // 4. Inclusive AI
             _ModuleCategoryCard(
               title: loc.tr('module_inclusive_title'),
               subtitle: loc.tr('module_inclusive_sub'),
@@ -104,6 +133,31 @@ class ModulesScreen extends ConsumerWidget {
                 ),
               ],
             ),
+            const SizedBox(height: 20),
+
+            // 5. Admin Panel (if admin)
+            if (isAdmin) ...[
+              _ModuleCategoryCard(
+                title: 'Панель Администратора',
+                subtitle: 'Модерация и аккредитация школ',
+                description: 'Проверка преподавательского состава, утверждение заявок и аналитика системы.',
+                icon: Icons.admin_panel_settings_rounded,
+                color: AppColors.primaryDark,
+                actions: [
+                  _ActionItem(
+                    'Модерация заявок учителей',
+                    Icons.how_to_reg_rounded,
+                    () => context.push('/admin'),
+                  ),
+                  _ActionItem(
+                    'Реестр подтвержденных школ',
+                    Icons.apartment_rounded,
+                    () => context.push('/admin'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+            ],
           ],
         ),
       ),
@@ -160,7 +214,7 @@ class _ModuleCategoryCard extends StatelessWidget {
                     Text(
                       title,
                       style: const TextStyle(
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -181,22 +235,23 @@ class _ModuleCategoryCard extends StatelessWidget {
           Text(
             description,
             style: const TextStyle(
-              fontSize: 13,
+              fontSize: 12,
               color: AppColors.secondaryTextLight,
-              height: 1.4,
+              height: 1.35,
             ),
           ),
-          const SizedBox(height: 16),
-          const Divider(),
+          const SizedBox(height: 14),
+          const Divider(height: 1),
           const SizedBox(height: 8),
           ...actions.map(
             (action) => ListTile(
+              dense: true,
               contentPadding: EdgeInsets.zero,
               leading: Icon(action.icon, size: 20, color: color),
               title: Text(
                 action.label,
                 style: const TextStyle(
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
               ),

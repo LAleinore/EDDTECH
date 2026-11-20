@@ -26,35 +26,35 @@ class _MoodTrackerScreenState extends ConsumerState<MoodTrackerScreen> {
       'score': 1,
       'state': 'terrible',
       'label': 'Очень плохо',
-      'icon': '😫',
+      'icon': Icons.sentiment_very_dissatisfied_rounded,
       'color': AppColors.error,
     },
     {
       'score': 2,
       'state': 'bad',
       'label': 'Плохо',
-      'icon': '😔',
+      'icon': Icons.sentiment_dissatisfied_rounded,
       'color': AppColors.warning,
     },
     {
       'score': 3,
       'state': 'neutral',
       'label': 'Нейтрально',
-      'icon': '😐',
+      'icon': Icons.sentiment_neutral_rounded,
       'color': Colors.blueGrey,
     },
     {
       'score': 4,
       'state': 'good',
       'label': 'Хорошо',
-      'icon': '🙂',
+      'icon': Icons.sentiment_satisfied_rounded,
       'color': AppColors.mindcareAccent,
     },
     {
       'score': 5,
       'state': 'excellent',
       'label': 'Отлично',
-      'icon': '😊',
+      'icon': Icons.sentiment_very_satisfied_rounded,
       'color': AppColors.success,
     },
   ];
@@ -159,9 +159,10 @@ class _MoodTrackerScreenState extends ConsumerState<MoodTrackerScreen> {
                       ),
                       child: Column(
                         children: [
-                          Text(
-                            grade['icon'],
-                            style: const TextStyle(fontSize: 28),
+                          Icon(
+                            grade['icon'] as IconData,
+                            size: 30,
+                            color: isSelected ? (grade['color'] as Color) : Colors.grey,
                           ),
                           const SizedBox(height: 6),
                           Text(
@@ -272,9 +273,10 @@ class _MoodTrackerScreenState extends ConsumerState<MoodTrackerScreen> {
                           padding: const EdgeInsets.all(14),
                           child: Row(
                             children: [
-                              Text(
-                                grade['icon'],
-                                style: const TextStyle(fontSize: 28),
+                              Icon(
+                                grade['icon'] as IconData,
+                                size: 28,
+                                color: grade['color'] as Color,
                               ),
                               const SizedBox(width: 14),
                               Expanded(

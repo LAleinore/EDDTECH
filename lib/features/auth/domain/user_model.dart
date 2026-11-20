@@ -2,9 +2,9 @@ import 'dart:convert';
 
 enum UserRole {
   teacher('teacher', 'Преподаватель'),
-  student('student', 'Студент'),
+  student('student', 'Учащийся'),
   learner('learner', 'Инклюзивный ученик'),
-  admin('admin', 'Администратор');
+  admin('admin', 'Администратор платформы');
 
   final String key;
   final String title;
@@ -88,6 +88,14 @@ class UserModel {
   final UserAccessibilitySettings accessibility;
   final bool isDemo;
 
+  // Teacher Accreditation Fields
+  final String? school;
+  final String? city;
+  final String? teacherCode;
+  final String? subject;
+  final bool isTeacherVerified;
+  final String teacherStatus; // 'approved', 'pending', 'rejected'
+
   const UserModel({
     required this.id,
     required this.name,
@@ -99,6 +107,12 @@ class UserModel {
     this.lastLoginAt,
     this.accessibility = const UserAccessibilitySettings(),
     this.isDemo = false,
+    this.school,
+    this.city,
+    this.teacherCode,
+    this.subject,
+    this.isTeacherVerified = true,
+    this.teacherStatus = 'approved',
   });
 
   UserModel copyWith({
@@ -112,6 +126,12 @@ class UserModel {
     DateTime? lastLoginAt,
     UserAccessibilitySettings? accessibility,
     bool? isDemo,
+    String? school,
+    String? city,
+    String? teacherCode,
+    String? subject,
+    bool? isTeacherVerified,
+    String? teacherStatus,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -124,6 +144,12 @@ class UserModel {
       lastLoginAt: lastLoginAt ?? this.lastLoginAt,
       accessibility: accessibility ?? this.accessibility,
       isDemo: isDemo ?? this.isDemo,
+      school: school ?? this.school,
+      city: city ?? this.city,
+      teacherCode: teacherCode ?? this.teacherCode,
+      subject: subject ?? this.subject,
+      isTeacherVerified: isTeacherVerified ?? this.isTeacherVerified,
+      teacherStatus: teacherStatus ?? this.teacherStatus,
     );
   }
 
@@ -139,6 +165,12 @@ class UserModel {
       'lastLoginAt': lastLoginAt?.toIso8601String(),
       'accessibility': accessibility.toMap(),
       'isDemo': isDemo,
+      'school': school,
+      'city': city,
+      'teacherCode': teacherCode,
+      'subject': subject,
+      'isTeacherVerified': isTeacherVerified,
+      'teacherStatus': teacherStatus,
     };
   }
 
@@ -162,6 +194,12 @@ class UserModel {
             )
           : const UserAccessibilitySettings(),
       isDemo: map['isDemo'] as bool? ?? false,
+      school: map['school'],
+      city: map['city'],
+      teacherCode: map['teacherCode'],
+      subject: map['subject'],
+      isTeacherVerified: map['isTeacherVerified'] as bool? ?? true,
+      teacherStatus: map['teacherStatus'] ?? 'approved',
     );
   }
 

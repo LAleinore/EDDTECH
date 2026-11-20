@@ -66,9 +66,23 @@ class HomeDashboardScreen extends ConsumerWidget {
                                 ),
                               ),
                             ),
-                            if (user?.isDemo == true) ...[
+                            if (user?.role == UserRole.teacher && user?.school != null) ...[
                               const SizedBox(width: 6),
-                              const DemoBadge(compact: true),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.teacherAccent.withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  user!.teacherCode ?? 'TCH',
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.teacherAccent,
+                                  ),
+                                ),
+                              ),
                             ],
                           ],
                         ),
@@ -161,25 +175,24 @@ class HomeDashboardScreen extends ConsumerWidget {
                           ),
                         ),
                         const Spacer(),
-                        if (user?.isDemo == true)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Text(
-                              'DEMO MODE',
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.18),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            role == UserRole.admin ? 'АДМИНИСТРАТОР' : (role == UserRole.teacher ? 'ПРЕПОДАВАТЕЛЬ' : 'ОБУЧЕНИЕ'),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 14),
@@ -232,7 +245,9 @@ class HomeDashboardScreen extends ConsumerWidget {
               const SizedBox(height: 22),
 
               // ROLE-ADAPTED SECTIONS
-              if (role == UserRole.teacher) ...[
+              if (role == UserRole.admin) ...[
+                _buildAdminSection(context, loc),
+              ] else if (role == UserRole.teacher) ...[
                 _buildTeacherSection(context, loc),
               ] else if (role == UserRole.learner) ...[
                 _buildLearnerSection(context, loc),
@@ -242,7 +257,7 @@ class HomeDashboardScreen extends ConsumerWidget {
 
               const SizedBox(height: 24),
 
-              // THREE CORE MODULES SECTION
+              // CORE MODULES SECTION
               Text(
                 loc.tr('nav_modules'),
                 style: const TextStyle(
@@ -252,15 +267,27 @@ class HomeDashboardScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
 
+              // Learning Hub Card
+              _ModuleNavCard(
+                title: 'Интерактивное Обучение',
+                subtitle: 'Учебные курсы и тренажеры знаний',
+                description: 'Алгебра, Python, Физика и Английский язык с практическими заданиями и AI Тьютором.',
+                icon: Icons.menu_book_rounded,
+                color: AppColors.primary,
+                badgeText: 'Обучение & Тесты',
+                onTap: () => context.push('/learning'),
+              ),
+              const SizedBox(height: 12),
+
               // Daryn Ustaz Card
               _ModuleNavCard(
                 title: loc.tr('module_teacher_title'),
-                subtitle: loc.tr('module_teacher_sub'),
-                description: loc.tr('module_teacher_desc'),
+                subtitle: 'Платформа верифицированных учителей',
+                description: 'Поурочные планы ҚМЖ, конструктор тестов БЖБ/ТЖБ и проверка школ.',
                 icon: Icons.school_rounded,
                 color: AppColors.teacherAccent,
                 badgeText: 'Преподавателям',
-                onTap: () => context.push('/teacher/lesson-generator'),
+                onTap: () => context.push('/teacher/portal'),
               ),
               const SizedBox(height: 12),
 
@@ -292,6 +319,82 @@ class HomeDashboardScreen extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+
+  // Admin Specific Dashboard Section
+  Widget _buildAdminSection(BuildContext context, AppLocalizations loc) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Управление аккредитацией и модерация',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            ),
+            TextButton(
+              onPressed: () => context.push('/admin'),
+              child: const Text(
+                'Панель админа',
+                style: TextStyle(fontSize: 12, color: AppColors.primaryDark, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        AppCard(
+          padding: const EdgeInsets.all(16),
+          color: AppColors.primaryDark.withOpacity(0.08),
+          border: Border.all(color: AppColors.primaryDark.withOpacity(0.3)),
+          onTap: () => context.push('/admin'),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryDark,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.admin_panel_settings_rounded,
+                  color: Colors.white,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Заявки учителей на верификацию',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Проверяйте принадлежность педагогов к школам и утверждайте доступ',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.secondaryTextLight,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 16,
+                color: AppColors.primaryDark,
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

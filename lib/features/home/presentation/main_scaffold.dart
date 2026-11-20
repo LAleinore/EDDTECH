@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/localization/app_localizations.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../auth/data/auth_repository.dart';
+import '../../auth/domain/user_model.dart';
 
 class MainScaffold extends ConsumerWidget {
   final StatefulNavigationShell navigationShell;
@@ -22,6 +23,7 @@ class MainScaffold extends ConsumerWidget {
     final user = ref.watch(authNotifierProvider).user;
     final loc = AppLocalizations(AppLanguage.fromCode(user?.language ?? 'ru'));
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isAdmin = user?.role == UserRole.admin;
 
     return Scaffold(
       body: navigationShell,
@@ -44,7 +46,7 @@ class MainScaffold extends ConsumerWidget {
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
+            padding: const EdgeInsets.symmetric(vertical: 4),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -55,29 +57,48 @@ class MainScaffold extends ConsumerWidget {
                   onTap: () => _onTap(0),
                 ),
                 _NavBarItem(
-                  icon: Icons.auto_awesome_rounded,
-                  label: loc.tr('nav_assistant'),
+                  icon: Icons.menu_book_rounded,
+                  label: 'Обучение',
                   isSelected: navigationShell.currentIndex == 1,
                   onTap: () => _onTap(1),
                   accentColor: AppColors.primary,
                 ),
                 _NavBarItem(
-                  icon: Icons.layers_rounded,
-                  label: loc.tr('nav_modules'),
+                  icon: Icons.auto_awesome_rounded,
+                  label: 'AI Помощник',
                   isSelected: navigationShell.currentIndex == 2,
                   onTap: () => _onTap(2),
+                  accentColor: AppColors.primaryDark,
+                ),
+                _NavBarItem(
+                  icon: Icons.layers_rounded,
+                  label: loc.tr('nav_modules'),
+                  isSelected: navigationShell.currentIndex == 3,
+                  onTap: () => _onTap(3),
                 ),
                 _NavBarItem(
                   icon: Icons.person_rounded,
                   label: loc.tr('nav_profile'),
-                  isSelected: navigationShell.currentIndex == 3,
-                  onTap: () => _onTap(3),
+                  isSelected: navigationShell.currentIndex == 4,
+                  onTap: () => _onTap(4),
                 ),
               ],
             ),
           ),
         ),
       ),
+      floatingActionButton: isAdmin
+          ? FloatingActionButton.extended(
+              backgroundColor: AppColors.primaryDark,
+              foregroundColor: Colors.white,
+              onPressed: () => context.push('/admin'),
+              icon: const Icon(Icons.admin_panel_settings_rounded, size: 20),
+              label: const Text(
+                'Админ-панель',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+              ),
+            )
+          : null,
     );
   }
 }
@@ -108,20 +129,20 @@ class _NavBarItem extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               icon,
-              size: 24,
+              size: 22,
               color: isSelected ? activeColor : inactiveColor,
             ),
             const SizedBox(height: 3),
             Text(
               label,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 10,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                 color: isSelected ? activeColor : inactiveColor,
               ),

@@ -6,7 +6,6 @@ import '../../../app/localization/app_localizations.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../core/widgets/buttons.dart';
 import '../../../core/widgets/cards.dart';
-import '../../../core/widgets/demo_badge.dart';
 import '../../../core/widgets/inputs.dart';
 import '../data/auth_repository.dart';
 import '../domain/user_model.dart';
@@ -24,6 +23,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   String _selectedLang = 'ru';
+  int _loginModeIndex = 0; // 0: Student, 1: Teacher, 2: Admin
 
   @override
   void dispose() {
@@ -43,24 +43,35 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
-  void _selectDemoAccount(UserRole role) {
+  void _selectQuickAccount(UserRole role) {
     String email;
+    String password;
+
     switch (role) {
       case UserRole.teacher:
         email = 'teacher@edumind.ai';
+        password = 'Password123!';
         break;
       case UserRole.student:
         email = 'student@edumind.ai';
+        password = 'Password123!';
         break;
       case UserRole.learner:
-      case UserRole.admin:
         email = 'learner@edumind.ai';
+        password = 'Password123!';
+        break;
+      case UserRole.admin:
+        email = 'admin@edumind.kz';
+        password = 'admin2026';
         break;
     }
 
     setState(() {
       _emailController.text = email;
-      _passwordController.text = 'Password123!';
+      _passwordController.text = password;
+      _loginModeIndex = role == UserRole.teacher
+          ? 1
+          : (role == UserRole.admin ? 2 : 0);
     });
 
     ScaffoldMessenger.of(context).clearSnackBars();
@@ -68,17 +79,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
+            const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
             const SizedBox(width: 8),
-            Expanded(child: Text('Подставлены данные: $email')),
+            Expanded(child: Text('Выбран профиль: $email')),
           ],
         ),
         backgroundColor: AppColors.primaryDark,
-        duration: const Duration(seconds: 2),
+        duration: const Duration(seconds: 1),
       ),
     );
 
-    // Run real validation and authentication pipeline
     _submit();
   }
 
@@ -141,16 +151,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
                   // Brand Header
                   Center(
                     child: Container(
-                      width: 72,
-                      height: 72,
+                      width: 68,
+                      height: 68,
                       decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(22),
+                        gradient: const LinearGradient(
+                          colors: [AppColors.primaryDark, AppColors.primary],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
                             color: AppColors.primary.withOpacity(0.35),
@@ -162,13 +176,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       child: const Icon(
                         Icons.school_rounded,
                         color: Colors.white,
-                        size: 38,
+                        size: 36,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
                   Text(
-                    loc.tr('app_title'),
+                    'EduMind AI',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.displayMedium?.copyWith(
                       color: AppColors.primary,
@@ -176,12 +190,58 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    loc.tr('tagline'),
+                  const Text(
+                    'Интеллектуальная образовательная платформа',
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    style: TextStyle(fontSize: 13, color: AppColors.secondaryTextLight),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 24),
+
+                  // Portal Mode Segmented Control
+                  CupertinoSlidingSegmentedControl<int>(
+                    groupValue: _loginModeIndex,
+                    children: const {
+                      0: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                        child: Text(
+                          'Учащийся',
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      1: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                        child: Text(
+                          'Преподаватель',
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      2: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                        child: Text(
+                          'Админ',
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    },
+                    onValueChanged: (val) {
+                      if (val != null) {
+                        setState(() {
+                          _loginModeIndex = val;
+                          if (val == 1) {
+                            _emailController.text = 'TCH-2026-AST';
+                            _passwordController.text = 'Password123!';
+                          } else if (val == 2) {
+                            _emailController.text = 'admin@edumind.kz';
+                            _passwordController.text = 'admin2026';
+                          } else {
+                            _emailController.text = 'student@edumind.ai';
+                            _passwordController.text = 'Password123!';
+                          }
+                        });
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 18),
 
                   if (authState.errorMessage != null) ...[
                     Container(
@@ -216,18 +276,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     const SizedBox(height: 16),
                   ],
 
-                  // Email Input
+                  // Email or Teacher ID Input
                   CustomTextField(
                     controller: _emailController,
-                    label: loc.tr('email'),
-                    hint: 'example@edumind.ai',
-                    prefixIcon: Icons.email_outlined,
+                    label: _loginModeIndex == 1
+                        ? 'Email или Код аккредитации (TCH-XXXX-KZ)'
+                        : (_loginModeIndex == 2 ? 'Email Администратора' : 'Электронная почта'),
+                    hint: _loginModeIndex == 1
+                        ? 'TCH-2026-AST или teacher@edumind.ai'
+                        : (_loginModeIndex == 2 ? 'admin@edumind.kz' : 'student@edumind.ai'),
+                    prefixIcon: _loginModeIndex == 1
+                        ? Icons.badge_outlined
+                        : (_loginModeIndex == 2 ? Icons.admin_panel_settings_outlined : Icons.email_outlined),
                     keyboardType: TextInputType.emailAddress,
                     validator: (val) {
-                      if (val == null || val.trim().isEmpty)
+                      if (val == null || val.trim().isEmpty) {
                         return loc.tr('field_required');
-                      if (!val.contains('@') || !val.contains('.'))
-                        return loc.tr('invalid_email');
+                      }
                       return null;
                     },
                   ),
@@ -251,8 +316,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           setState(() => _obscurePassword = !_obscurePassword),
                     ),
                     validator: (val) {
-                      if (val == null || val.trim().isEmpty)
+                      if (val == null || val.trim().isEmpty) {
                         return loc.tr('field_required');
+                      }
                       if (val.length < 6) return loc.tr('short_password');
                       return null;
                     },
@@ -276,7 +342,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                   // Sign In Button
                   PrimaryButton(
-                    text: loc.tr('login'),
+                    text: _loginModeIndex == 1
+                        ? 'Войти в портал учителей'
+                        : (_loginModeIndex == 2 ? 'Войти в панель администратора' : loc.tr('login')),
                     isLoading: authState.isLoading,
                     onPressed: _submit,
                   ),
@@ -301,43 +369,47 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
 
-                  // JURY DEMO MODE SECTION
+                  // QUICK ROLE ACCESS
                   const Divider(),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const DemoBadge(),
-                      const SizedBox(width: 8),
-                      Text(
-                        loc.tr('demo_mode'),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.workspace_premium_rounded, size: 14, color: AppColors.primary),
+                            SizedBox(width: 4),
+                            Text(
+                              'БЫСТРЫЙ ДОСТУП К КАБИНЕТАМ',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primary,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    loc.tr('demo_desc'),
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.secondaryTextLight,
-                    ),
-                  ),
                   const SizedBox(height: 14),
 
-                  // Demo quick login cards
+                  // Quick login cards
                   AppCard(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 12,
                     ),
-                    onTap: () => _selectDemoAccount(UserRole.teacher),
+                    onTap: () => _selectQuickAccount(UserRole.teacher),
                     child: Row(
                       children: [
                         Container(
@@ -347,25 +419,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Icon(
-                            Icons.school,
+                            Icons.school_rounded,
                             color: AppColors.teacherAccent,
                             size: 22,
                           ),
                         ),
                         const SizedBox(width: 12),
-                        Expanded(
+                        const Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                loc.tr('login_as_teacher_demo'),
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
+                                'Кабинет Преподавателя (Daryn Ustaz)',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
                                   fontSize: 13,
                                 ),
                               ),
-                              const Text(
-                                'Айгүл Серікқызы • Daryn Ustaz AI',
+                              Text(
+                                'Айгүл Серікқызы • НИШ ФМН г. Астана • TCH-2026-AST',
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: AppColors.secondaryTextLight,
@@ -375,7 +447,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                         ),
                         const Icon(
-                          Icons.arrow_forward_ios,
+                          Icons.arrow_forward_ios_rounded,
                           size: 14,
                           color: AppColors.secondaryTextLight,
                         ),
@@ -389,7 +461,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       horizontal: 16,
                       vertical: 12,
                     ),
-                    onTap: () => _selectDemoAccount(UserRole.student),
+                    onTap: () => _selectQuickAccount(UserRole.student),
                     child: Row(
                       children: [
                         Container(
@@ -399,25 +471,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Icon(
-                            Icons.spa,
+                            Icons.psychology_rounded,
                             color: AppColors.mindcareAccent,
                             size: 22,
                           ),
                         ),
                         const SizedBox(width: 12),
-                        Expanded(
+                        const Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                loc.tr('login_as_student_demo'),
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
+                                'Кабинет Учащегося (Обучение & MindCare)',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
                                   fontSize: 13,
                                 ),
                               ),
-                              const Text(
-                                'Алихан Нуртаев • MindCare & Study',
+                              Text(
+                                'Алихан Нуртаев • 10 класс • РФМШ',
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: AppColors.secondaryTextLight,
@@ -427,7 +499,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                         ),
                         const Icon(
-                          Icons.arrow_forward_ios,
+                          Icons.arrow_forward_ios_rounded,
                           size: 14,
                           color: AppColors.secondaryTextLight,
                         ),
@@ -441,7 +513,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       horizontal: 16,
                       vertical: 12,
                     ),
-                    onTap: () => _selectDemoAccount(UserRole.learner),
+                    onTap: () => _selectQuickAccount(UserRole.learner),
                     child: Row(
                       children: [
                         Container(
@@ -451,25 +523,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Icon(
-                            Icons.accessibility_new,
+                            Icons.accessibility_new_rounded,
                             color: AppColors.inclusiveAccent,
                             size: 22,
                           ),
                         ),
                         const SizedBox(width: 12),
-                        Expanded(
+                        const Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                loc.tr('login_as_learner_demo'),
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
+                                'Адаптивный Кабинет (Inclusive AI)',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
                                   fontSize: 13,
                                 ),
                               ),
-                              const Text(
-                                'Данияр Бекенов • Inclusive AI (TTS / High Contrast)',
+                              Text(
+                                'Данияр Бекенов • Озвучка TTS • Крупный шрифт',
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: AppColors.secondaryTextLight,
@@ -479,7 +551,59 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                         ),
                         const Icon(
-                          Icons.arrow_forward_ios,
+                          Icons.arrow_forward_ios_rounded,
+                          size: 14,
+                          color: AppColors.secondaryTextLight,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+
+                  AppCard(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    onTap: () => _selectQuickAccount(UserRole.admin),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryDark.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.admin_panel_settings_rounded,
+                            color: AppColors.primaryDark,
+                            size: 22,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Панель Администратора (Модерация)',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              Text(
+                                'Проверка школ и одобрение преподавателей',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.secondaryTextLight,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          Icons.arrow_forward_ios_rounded,
                           size: 14,
                           color: AppColors.secondaryTextLight,
                         ),
