@@ -1,0 +1,30 @@
+workflows:
+  ios-workflow:
+    name: iOS Build Workflow
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      flutter: 3.32.0
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Get Flutter packages
+        script: |
+          flutter pub get
+      - name: Analyze project
+        script: |
+          flutter analyze
+      - name: Run unit & widget tests
+        script: |
+          flutter test
+      - name: Build iOS without code signing
+        script: |
+          flutter build ios --release --no-codesign
+      - name: Package Payload to IPA
+        script: |
+          mkdir -p Payload
+          cp -r build/ios/iphoneos/Runner.app Payload/
+          zip -r EduMind-AI-iOS.ipa Payload
+    artifacts:
+      - EduMind-AI-iOS.ipa
+      - build/ios/iphoneos/Runner.app
