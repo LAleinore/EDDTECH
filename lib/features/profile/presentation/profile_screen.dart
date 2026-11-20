@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../app/localization/app_localizations.dart';
 import '../../../app/theme/app_colors.dart';
+import '../../../app/theme/theme_provider.dart';
 import '../../../core/widgets/buttons.dart';
 import '../../../core/widgets/cards.dart';
 import '../../../core/widgets/demo_badge.dart';
@@ -16,6 +18,7 @@ class ProfileScreen extends ConsumerWidget {
     final user = ref.watch(authNotifierProvider).user;
     final loc = AppLocalizations(AppLanguage.fromCode(user?.language ?? 'ru'));
     final authNotifier = ref.read(authNotifierProvider.notifier);
+    final isDark = ref.watch(themeProvider);
 
     return Scaffold(
       appBar: AppBar(title: Text(loc.tr('profile'))),
@@ -159,6 +162,20 @@ class ProfileScreen extends ConsumerWidget {
                   const SizedBox(height: 12),
                   SwitchListTile.adaptive(
                     contentPadding: EdgeInsets.zero,
+                    title: const Text(
+                      'Тёмная тема',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    value: isDark,
+                    onChanged: (val) {
+                      ref.read(themeProvider.notifier).toggleDarkTheme(val);
+                    },
+                  ),
+                  SwitchListTile.adaptive(
+                    contentPadding: EdgeInsets.zero,
                     title: Text(
                       loc.tr('high_contrast'),
                       style: const TextStyle(
@@ -192,6 +209,18 @@ class ProfileScreen extends ConsumerWidget {
                               .copyWith(reduceMotion: val);
                       authNotifier.updateProfile(accessibility: acc);
                     },
+                  ),
+                  const SizedBox(height: 4),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      onPressed: () => context.push('/inclusive/accessibility'),
+                      icon: const Icon(Icons.tune_rounded, size: 16),
+                      label: const Text(
+                        'Шрифт и все настройки',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -293,10 +322,12 @@ class _LangChip extends StatelessWidget {
         style: TextStyle(
           fontSize: 12,
           fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+          color: isSelected ? AppColors.primaryDark : null,
         ),
       ),
       selected: isSelected,
       selectedColor: AppColors.primaryLight,
+      checkmarkColor: AppColors.primaryDark,
       onSelected: (_) => onTap(),
     );
   }

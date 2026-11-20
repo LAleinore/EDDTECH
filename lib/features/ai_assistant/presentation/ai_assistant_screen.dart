@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../core/services/tts_service.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../auth/domain/user_model.dart';
-import '../../mindcare/data/mindcare_repository.dart';
 import '../../mindcare/domain/chat_message_model.dart';
+import '../data/assistant_repository.dart';
 
 class AiAssistantScreen extends ConsumerStatefulWidget {
   const AiAssistantScreen({super.key});
@@ -119,8 +120,14 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
     _scrollToBottom();
 
     try {
-      final repo = ref.read(mindcareRepositoryProvider);
-      final reply = await repo.sendMessage(message: msg, history: _messages);
+      final user = ref.read(authNotifierProvider).user;
+      final repo = ref.read(assistantRepositoryProvider);
+      final reply = await repo.sendMessage(
+        message: msg,
+        history: _messages,
+        role: user?.role ?? UserRole.student,
+        language: user?.language ?? 'ru',
+      );
 
       setState(() {
         _messages.add(reply);
@@ -181,42 +188,93 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
                       decoration: BoxDecoration(
                         color: isUser
                             ? AppColors.primary
-                            : Theme.of(context).cardTheme.color,
+                            : (m.isCrisis
+                                  ? AppColors.errorLight
+                                  : Theme.of(context).cardTheme.color),
                         borderRadius: BorderRadius.only(
                           topLeft: const Radius.circular(18),
                           topRight: const Radius.circular(18),
                           bottomLeft: Radius.circular(isUser ? 18 : 4),
                           bottomRight: Radius.circular(isUser ? 4 : 18),
                         ),
-                        border: Border.all(color: AppColors.dividerLight),
+                        border: m.isCrisis
+                            ? Border.all(color: AppColors.error, width: 1.5)
+                            : Border.all(color: AppColors.dividerLight),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          if (m.isCrisis) ...[
+                            const Row(
+                              children: [
+                                Icon(
+                                  Icons.warning_amber_rounded,
+                                  color: AppColors.error,
+                                  size: 18,
+                                ),
+                                SizedBox(width: 6),
+                                Text(
+                                  'ЛИНИЯ СРОЧНОЙ ПОМОЩИ',
+                                  style: TextStyle(
+                                    color: AppColors.error,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                          ],
                           Text(
                             m.content,
                             style: TextStyle(
                               fontSize: 14,
                               height: 1.45,
-                              color: isUser ? Colors.white : null,
+                              color: isUser
+                                  ? Colors.white
+                                  : (m.isCrisis ? AppColors.textLight : null),
                             ),
                           ),
                           if (!isUser) ...[
                             const SizedBox(height: 6),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: IconButton(
-                                icon: const Icon(
-                                  Icons.volume_up_rounded,
-                                  size: 18,
-                                  color: AppColors.primary,
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                if (m.suggestedTechnique != null &&
+                                    m.suggestedTechnique!.startsWith('/'))
+                                  TextButton.icon(
+                                    style: TextButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                      ),
+                                      minimumSize: const Size(0, 32),
+                                    ),
+                                    onPressed: () =>
+                                        context.push(m.suggestedTechnique!),
+                                    icon: const Icon(
+                                      Icons.open_in_new_rounded,
+                                      size: 14,
+                                    ),
+                                    label: const Text(
+                                      'Открыть модуль',
+                                      style: TextStyle(fontSize: 12),
+                                    ),
+                                  )
+                                else
+                                  const SizedBox.shrink(),
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.volume_up_rounded,
+                                    size: 18,
+                                    color: AppColors.primary,
+                                  ),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  onPressed: () {
+                                    _ttsService.speak(m.content);
+                                  },
                                 ),
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
-                                onPressed: () {
-                                  _ttsService.speak(m.content);
-                                },
-                              ),
+                              ],
                             ),
                           ],
                         ],

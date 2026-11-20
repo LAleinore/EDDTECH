@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'router.dart';
 import 'theme/app_theme.dart';
+import 'theme/theme_provider.dart';
 import '../features/auth/data/auth_repository.dart';
 
 class EduMindApp extends ConsumerWidget {
@@ -13,8 +14,8 @@ class EduMindApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
     final storage = ref.watch(storageServiceProvider);
     final authState = ref.watch(authNotifierProvider);
+    final isDark = ref.watch(themeProvider);
 
-    final isDark = storage.isDarkTheme();
     final fontScale =
         authState.user?.accessibility.fontScale ?? storage.getFontScale();
     final highContrast =

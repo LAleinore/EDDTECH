@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../core/widgets/cards.dart';
 
@@ -14,6 +15,7 @@ class NotificationsScreen extends StatelessWidget {
         'time': '10 мин назад',
         'icon': Icons.school,
         'color': AppColors.teacherAccent,
+        'route': '/teacher/lesson-generator',
       },
       {
         'title': 'MindCare: время для чекина',
@@ -21,6 +23,7 @@ class NotificationsScreen extends StatelessWidget {
         'time': '1 час назад',
         'icon': Icons.spa,
         'color': AppColors.mindcareAccent,
+        'route': '/mindcare/mood',
       },
       {
         'title': 'Специальные возможности активированы',
@@ -29,6 +32,7 @@ class NotificationsScreen extends StatelessWidget {
         'time': 'Вчера',
         'icon': Icons.accessibility_new,
         'color': AppColors.inclusiveAccent,
+        'route': '/inclusive/accessibility',
       },
     ];
 
@@ -43,6 +47,7 @@ class NotificationsScreen extends StatelessWidget {
             final item = notifications[index];
             return AppCard(
               padding: const EdgeInsets.all(16),
+              onTap: () => context.push(item['route'] as String),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
