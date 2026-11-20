@@ -64,8 +64,15 @@ class AIGateway:
         language: str,
         objectives: Optional[str] = None
     ) -> Dict[str, Any]:
-        # If real Gemini key is configured, invoke Gemini API
-        if settings.GEMINI_API_KEY:
+        # If real OpenAI or Gemini key is configured, invoke AI API
+        if settings.OPENAI_API_KEY:
+            try:
+                plan = await cls._openai_generate_lesson(subject, grade, topic, duration, difficulty, language, objectives)
+                if plan:
+                    return plan
+            except Exception:
+                pass
+        elif settings.GEMINI_API_KEY:
             try:
                 return await cls._gemini_generate_lesson(subject, grade, topic, duration, difficulty, language, objectives)
             except Exception:
@@ -263,3 +270,189 @@ class AIGateway:
             "isCrisis": False,
             "suggestedTechnique": None
         }
+
+    @classmethod
+    async def generate_general_assistant_reply(
+        cls,
+        message: str,
+        history: List[Any],
+        role: str = "student",
+        language: str = "ru"
+    ) -> Dict[str, Any]:
+        # Always run crisis safety guardrails first
+        if cls.check_crisis(message):
+            crisis = cls.get_crisis_response(language)
+            return {
+                "reply": crisis["reply"],
+                "isCrisis": True,
+                "emergencyHelpline": crisis.get("emergencyHelpline"),
+                "suggestedRoute": "/mindcare/chat",
+            }
+
+        # Real Gemini API integration if GEMINI_API_KEY is configured
+        if settings.GEMINI_API_KEY:
+            try:
+                system_prompt = (
+                    f"You are EduMind AI, a helpful educational assistant for a user with role '{role}'. "
+                    f"Reply strictly in language '{language}'. Be structured, concise, and supportive. "
+                    "Never give medical or psychiatric diagnoses."
+                )
+                url = (
+                    "https://generativelanguage.googleapis.com/v1beta/models/"
+                    f"gemini-1.5-flash:generateContent?key={settings.GEMINI_API_KEY}"
+                )
+                payload = {
+                    "contents": [
+                        {
+                            "role": "user",
+                            "parts": [{"text": f"{system_prompt}\n\nUser request: {message}"}],
+                        }
+                    ]
+                }
+                async with httpx.AsyncClient(timeout=settings.AI_REQUEST_TIMEOUT_SECONDS) as client:
+                    resp = await client.post(url, json=payload)
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        text = data["candidates"][0]["content"]["parts"][0]["text"]
+                        return {
+                            "reply": text.strip(),
+                            "isCrisis": False,
+                            "emergencyHelpline": None,
+                            "suggestedRoute": None,
+                        }
+            except Exception:
+                pass
+
+        lower = message.lower()
+
+        # Detect emotional distress -> suggest MindCare
+        if any(k in lower for k in ["стресс", "тревог", "устал", "выгоран", "қобалжу", "stress", "anxious", "tired"]):
+            if language == "kk":
+                reply = "Оқу жүктемесінен шаршау — қалыпты жағдай. 5 минут үзіліс жасап, MindCare бөліміндегі 4-7-8 тыныс алу жаттығуын орындап көруді ұсынамын."
+            elif language == "en":
+                reply = "Feeling fatigued or stressed during studies is completely normal. Take a 5-minute break and try the 4-7-8 breathing exercise in the MindCare module."
+            else:
+                reply = "Усталость и волнение во время учёбы — это нормально. Рекомендую сделать короткий перерыв на 5 минут и попробовать дыхательную практику 4-7-8 в модуле MindCare."
+            return {
+                "reply": reply,
+                "isCrisis": False,
+                "emergencyHelpline": None,
+                "suggestedRoute": "/mindcare/exercises",
+            }
+
+        # Teacher-oriented contextual responses
+        if role == "teacher":
+            if any(k in lower for k in ["тест", "критери", "оценив", "quiz", "rubric", "бағалау"]):
+                reply = (
+                    "Для объективного оценивания рекомендую 4-критериальную шкалу (макс. 10 баллов):\n"
+                    "1. Понимание ключевых понятий (0–3 балла)\n"
+                    "2. Практическое применение и аргументация (0–3 балла)\n"
+                    "3. Структура и наглядность подачи (0–2 балла)\n"
+                    "4. Самостоятельность и выводы (0–2 балла)\n\n"
+                    "Вы также можете автоматически создать тест в модуле «Конструктор тестов» Daryn Ustaz."
+                )
+                return {"reply": reply, "isCrisis": False, "emergencyHelpline": None, "suggestedRoute": "/teacher/quiz-generator"}
+            if any(k in lower for k in ["физик", "пифагор", "урок", "план", "задан", "интерактив", "lesson"]):
+                reply = (
+                    f"Отличная педагогическая задача! Вот структура интерактивной активности по запросу «{message}»:\n"
+                    "• Разминка (5 мин): короткий проблемный вопрос из реальной жизни.\n"
+                    "• Мини-эксперимент / работа в парах (10 мин): ученики проверяют гипотезу на наглядных примерах.\n"
+                    "• Закрепление (5 мин): быстрая рефлексия и 2 контрольных вопроса.\n\n"
+                    "Хотите оформить это в полноценный поурочный план? Откройте «Генератор уроков» Daryn Ustaz."
+                )
+                return {"reply": reply, "isCrisis": False, "emergencyHelpline": None, "suggestedRoute": "/teacher/lesson-generator"}
+            reply = (
+                f"Как педагогический ассистент Daryn Ustaz, я проанализировал ваш запрос: «{message}».\n\n"
+                "Рекомендуемый подход:\n"
+                "1. Сформулируйте 1–2 измеримые цели урока.\n"
+                "2. Разбейте теорию на блоки по 7–10 минут с проверкой понимания.\n"
+                "3. Добавьте дифференцированное практическое задание (базовый и продвинутый уровень)."
+            )
+            return {"reply": reply, "isCrisis": False, "emergencyHelpline": None, "suggestedRoute": "/teacher/lesson-generator"}
+
+        # Inclusive learner-oriented contextual responses
+        if role == "learner":
+            reply = (
+                f"Давай разберём тему «{message}» просто и по шагам:\n\n"
+                "Шаг 1. Главная идея — представь это как знакомую вещь из обычной жизни.\n"
+                "Шаг 2. Разделим материал на короткие части, чтобы не перегружаться.\n"
+                "Шаг 3. Попробуй пересказать своими словами в одном предложении.\n\n"
+                "Нажми на иконку динамика ниже, чтобы прослушать объяснение вслух, или открой AI Simplifier для адаптации любого текста."
+            )
+            return {"reply": reply, "isCrisis": False, "emergencyHelpline": None, "suggestedRoute": "/inclusive/simplifier"}
+
+        # Student-oriented contextual responses
+        if any(k in lower for k in ["днк", "рнк", "dna", "rna"]):
+            reply = (
+                "Кратко о разнице между ДНК и РНК:\n"
+                "• Структура: ДНК — двойная спираль, РНК — обычно одна цепочка.\n"
+                "• Сахар: в ДНК — дезоксирибоза, в РНК — рибоза.\n"
+                "• Основания: в ДНК есть тимин (Т), а в РНК вместо него урацил (У).\n"
+                "• Роль: ДНК хранит наследственную информацию, а РНК переносит её и участвует в синтезе белка."
+            )
+            return {"reply": reply, "isCrisis": False, "emergencyHelpline": None, "suggestedRoute": None}
+        if any(k in lower for k in ["экзамен", "дат", "запомн", "подготов", "exam", "plan"]):
+            reply = (
+                "Эффективный план подготовки и запоминания:\n"
+                "1. Метод интервального повторения (через 1 день, 3 дня и 7 дней).\n"
+                "2. Техника Помодоро: 25 минут фокуса + 5 минут отдыха.\n"
+                "3. Активное воспроизведение: закрывайте конспект и пытайтесь пересказать ключевые факты или даты по памяти.\n"
+                "4. Сон не менее 7–8 часов — именно во сне память консолидирует изученное."
+            )
+            return {"reply": reply, "isCrisis": False, "emergencyHelpline": None, "suggestedRoute": None}
+
+        if language == "kk":
+            reply = (
+                f"«{message}» сұрағы бойынша оқу жоспары:\n"
+                "1. Негізгі терминдер мен анықтамаларды бөліп алыңыз.\n"
+                "2. Тақырыпты 2–3 қарапайым мысалмен бекітіңіз.\n"
+                "3. Өзіңізді тексеру үшін 3 бақылау сұрағына жауап беріңіз."
+            )
+        elif language == "en":
+            reply = (
+                f"Here is a structured study approach for \"{message}\":\n"
+                "1. Identify the core definitions and principles.\n"
+                "2. Connect the concept to 1–2 concrete real-world examples.\n"
+                "3. Test your understanding by explaining it in your own words."
+            )
+        else:
+            reply = (
+                f"Разбор по вашему вопросу «{message}»:\n"
+                "1. Выделите главное определение и базовый принцип темы.\n"
+                "2. Свяжите теорию с 1–2 наглядными примерами из практики.\n"
+                "3. Проверьте себя: попробуйте кратко пересказать суть в 3 предложениях.\n\n"
+                "Если нужно упростить большой текст — используйте модуль Inclusive AI Simplifier."
+            )
+
+        return {"reply": reply, "isCrisis": False, "suggestedTechnique": None}
+
+    @classmethod
+    async def _openai_generate_lesson(
+        cls, subject: str, grade: str, topic: str, duration: int, difficulty: str, language: str, objectives: Optional[str]
+    ) -> Optional[Dict[str, Any]]:
+        url = "https://api.openai.com/v1/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {settings.OPENAI_API_KEY}",
+            "Content-Type": "application/json",
+        }
+        prompt = (
+            f"Generate a structured lesson plan for subject '{subject}', grade '{grade}', topic '{topic}', "
+            f"duration {duration} minutes, difficulty '{difficulty}', language '{language}'. "
+            f"Return pure JSON with keys: title, objectives (list), overview, introduction, main_body (list), practical_tasks (list), conclusion, homework."
+        )
+        async with httpx.AsyncClient(timeout=settings.AI_REQUEST_TIMEOUT_SECONDS) as client:
+            resp = await client.post(
+                url,
+                headers=headers,
+                json={
+                    "model": "gpt-4o-mini",
+                    "messages": [{"role": "user", "content": prompt}],
+                    "response_format": {"type": "json_object"},
+                },
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                content = json.loads(data["choices"][0]["message"]["content"])
+                return content
+        return None
+        return {"reply": reply, "isCrisis": False, "emergencyHelpline": None, "suggestedRoute": None}
