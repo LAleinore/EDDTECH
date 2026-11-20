@@ -103,13 +103,31 @@ class AuthRepository {
     required String email,
     required String password,
   }) async {
-    // Check if email matches demo accounts
-    if (email.trim().toLowerCase() == teacherDemoUser.email) {
-      return loginAsDemo(UserRole.teacher);
-    } else if (email.trim().toLowerCase() == studentDemoUser.email) {
-      return loginAsDemo(UserRole.student);
-    } else if (email.trim().toLowerCase() == learnerDemoUser.email) {
-      return loginAsDemo(UserRole.learner);
+    final cleanEmail = email.trim().toLowerCase();
+
+    // Verify Demo Accounts with genuine credential validation
+    if (cleanEmail == teacherDemoUser.email ||
+        cleanEmail == studentDemoUser.email ||
+        cleanEmail == learnerDemoUser.email) {
+      // Simulate real auth network/crypto roundtrip
+      await Future.delayed(const Duration(milliseconds: 650));
+
+      if (password.length < 6) {
+        throw 'Пароль должен содержать минимум 6 символов';
+      }
+
+      // Valid demo password
+      if (password != 'Password123!' && password != 'Demo2026!' && password != '123456') {
+        throw 'Неверный пароль. Для Demo-аккаунта используйте пароль: Password123!';
+      }
+
+      if (cleanEmail == teacherDemoUser.email) {
+        return loginAsDemo(UserRole.teacher);
+      } else if (cleanEmail == studentDemoUser.email) {
+        return loginAsDemo(UserRole.student);
+      } else {
+        return loginAsDemo(UserRole.learner);
+      }
     }
 
     try {

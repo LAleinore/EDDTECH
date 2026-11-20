@@ -43,8 +43,43 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
-  void _loginAsDemo(UserRole role) {
-    ref.read(authNotifierProvider.notifier).loginAsDemo(role);
+  void _selectDemoAccount(UserRole role) {
+    String email;
+    switch (role) {
+      case UserRole.teacher:
+        email = 'teacher@edumind.ai';
+        break;
+      case UserRole.student:
+        email = 'student@edumind.ai';
+        break;
+      case UserRole.learner:
+      case UserRole.admin:
+        email = 'learner@edumind.ai';
+        break;
+    }
+
+    setState(() {
+      _emailController.text = email;
+      _passwordController.text = 'Password123!';
+    });
+
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
+            const SizedBox(width: 8),
+            Expanded(child: Text('Подставлены данные: $email')),
+          ],
+        ),
+        backgroundColor: AppColors.primaryDark,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+
+    // Run real validation and authentication pipeline
+    _submit();
   }
 
   @override
@@ -302,7 +337,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       horizontal: 16,
                       vertical: 12,
                     ),
-                    onTap: () => _loginAsDemo(UserRole.teacher),
+                    onTap: () => _selectDemoAccount(UserRole.teacher),
                     child: Row(
                       children: [
                         Container(
@@ -354,7 +389,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       horizontal: 16,
                       vertical: 12,
                     ),
-                    onTap: () => _loginAsDemo(UserRole.student),
+                    onTap: () => _selectDemoAccount(UserRole.student),
                     child: Row(
                       children: [
                         Container(
@@ -406,7 +441,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       horizontal: 16,
                       vertical: 12,
                     ),
-                    onTap: () => _loginAsDemo(UserRole.learner),
+                    onTap: () => _selectDemoAccount(UserRole.learner),
                     child: Row(
                       children: [
                         Container(
