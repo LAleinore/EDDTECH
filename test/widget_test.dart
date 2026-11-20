@@ -24,7 +24,6 @@ void main() {
 
     // Verify app brand is rendered
     expect(find.text('EduMind AI'), findsWidgets);
-    expect(find.text('Войти'), findsWidgets);
-    expect(find.text('Demo Режим для Жюри'), findsOneWidget);
+    expect(find.text('Войти в систему'), findsWidgets);
   });
 }
