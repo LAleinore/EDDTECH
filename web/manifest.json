@@ -1,11 +1,11 @@
 {
-    "name": "edumind_ai",
-    "short_name": "edumind_ai",
+    "name": "EduMind AI - Интеллектуальная образовательная система",
+    "short_name": "EduMind AI",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#4A6CF7",
+    "theme_color": "#4A6CF7",
+    "description": "Интеллектуальная образовательная экосистема нового поколения (Daryn Ustaz, MindCare, Inclusive AI).",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
