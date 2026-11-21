@@ -18,44 +18,65 @@ class AiSimplifierScreen extends ConsumerStatefulWidget {
 
 class _AiSimplifierScreenState extends ConsumerState<AiSimplifierScreen> {
   final _textController = TextEditingController(
-    text:
-        'Фотосинтез представляет собой сложный многоступенчатый фотохимический процесс преобразования лучистой энергии видимого света в энергию химических связей органических соединений при участии хлорофилла и ферментов.',
+    text: 'ядерная физика',
   );
   bool _isLoading = false;
   SimplifiedResultModel? _result;
   final TtsService _ttsService = TtsService();
+  double _speechSpeed = 0.9;
+
+  final List<String> _quickTopics = [
+    'ядерная физика',
+    'фотосинтез',
+    'теорема Пифагора',
+    'гравитация',
+    'ДНК и генетика',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _ttsService.playingStateNotifier.addListener(_onTtsStateChanged);
+  }
+
+  void _onTtsStateChanged() {
+    if (mounted) setState(() {});
+  }
 
   @override
   void dispose() {
+    _ttsService.playingStateNotifier.removeListener(_onTtsStateChanged);
     _textController.dispose();
     _ttsService.stop();
     super.dispose();
   }
 
   Future<void> _simplify() async {
-    if (_textController.text.trim().isEmpty) return;
+    final text = _textController.text.trim();
+    if (text.isEmpty) return;
     setState(() => _isLoading = true);
 
     try {
       final res = await ref
           .read(inclusiveRepositoryProvider)
-          .simplifyText(text: _textController.text.trim());
-      setState(() {
-        _result = res;
-        _isLoading = false;
-      });
+          .simplifyText(text: text);
+      if (mounted) {
+        setState(() {
+          _result = res;
+          _isLoading = false;
+        });
+      }
     } catch (_) {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   void _speakText(String text) {
     if (_ttsService.isPlaying) {
       _ttsService.stop();
-      setState(() {});
     } else {
+      _ttsService.setRate(_speechSpeed);
       _ttsService.speak(text);
-      setState(() {});
     }
   }
 
@@ -75,7 +96,9 @@ class _AiSimplifierScreenState extends ConsumerState<AiSimplifierScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('AI Simplifier')),
+      appBar: AppBar(
+        title: const Text('AI Simplifier'),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -84,9 +107,46 @@ class _AiSimplifierScreenState extends ConsumerState<AiSimplifierScreen> {
             children: [
               CustomTextField(
                 controller: _textController,
-                label: 'Сложный учебный текст',
-                hint: 'Вставьте параграф из учебника или научную статью...',
-                maxLines: 4,
+                label: 'Сложный учебный текст или тема',
+                hint: 'Введите тему (например: ядерная физика) или вставьте параграф...',
+                maxLines: 3,
+              ),
+              const SizedBox(height: 10),
+
+              // Quick topic chips
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: _quickTopics.map((topic) {
+                    final isCurrent =
+                        _textController.text.trim().toLowerCase() == topic.toLowerCase();
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ActionChip(
+                        avatar: const Icon(Icons.bolt_rounded, size: 16),
+                        label: Text(
+                          topic,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                        backgroundColor: isCurrent
+                            ? AppColors.inclusiveAccent.withOpacity(0.15)
+                            : null,
+                        side: BorderSide(
+                          color: isCurrent
+                              ? AppColors.inclusiveAccent
+                              : Colors.grey.withOpacity(0.2),
+                        ),
+                        onPressed: () {
+                          _textController.text = topic;
+                          _simplify();
+                        },
+                      ),
+                    );
+                  }).toList(),
+                ),
               ),
               const SizedBox(height: 16),
 
@@ -98,35 +158,138 @@ class _AiSimplifierScreenState extends ConsumerState<AiSimplifierScreen> {
                 onPressed: _simplify,
               ),
 
-              if (_result != null) ...[
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        _result!.title,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+              if (_isLoading) ...[
+                const SizedBox(height: 20),
+                Center(
+                  child: Column(
+                    children: [
+                      const CircularProgressIndicator(
+                        color: AppColors.inclusiveAccent,
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'AI анализирует материал и готовит видеоразбор...',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Theme.of(context).hintColor,
                         ),
                       ),
-                    ),
-                    IconButton.filled(
-                      style: IconButton.styleFrom(
-                        backgroundColor: AppColors.inclusiveAccent,
+                    ],
+                  ),
+                ),
+              ],
+
+              if (_result != null && !_isLoading) ...[
+                const SizedBox(height: 24),
+
+                // Audio Voice Agent Player Bar
+                AppCard(
+                  padding: const EdgeInsets.all(14),
+                  color: AppColors.inclusiveAccent.withOpacity(0.06),
+                  border: Border.all(color: AppColors.inclusiveAccent.withOpacity(0.3)),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.inclusiveAccent.withOpacity(0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.record_voice_over_rounded,
+                              color: AppColors.inclusiveAccent,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Естественный голосовой агент AI',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  'Приятное студийное озвучивание объяснения',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: AppColors.secondaryTextLight,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton.filled(
+                            style: IconButton.styleFrom(
+                              backgroundColor: AppColors.inclusiveAccent,
+                            ),
+                            icon: Icon(
+                              _ttsService.isPlaying
+                                  ? Icons.stop_rounded
+                                  : Icons.volume_up_rounded,
+                              color: Colors.white,
+                            ),
+                            onPressed: () => _speakText(
+                              '${_result!.simpleExplanation}. ${_result!.summary}',
+                            ),
+                          ),
+                        ],
                       ),
-                      icon: Icon(
-                        _ttsService.isPlaying
-                            ? Icons.stop_rounded
-                            : Icons.volume_up_rounded,
-                        color: Colors.white,
+                      const Divider(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            _ttsService.isPlaying ? '🔊 Идет озвучивание...' : 'Скорость речи:',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: _ttsService.isPlaying
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                              color: _ttsService.isPlaying
+                                  ? AppColors.inclusiveAccent
+                                  : AppColors.secondaryTextLight,
+                            ),
+                          ),
+                          Row(
+                            children: [0.8, 1.0, 1.2].map((s) {
+                              final isSelected = (_speechSpeed - (s == 1.0 ? 0.9 : (s == 0.8 ? 0.75 : 1.15))).abs() < 0.1;
+                              return Padding(
+                                padding: const EdgeInsets.only(left: 6),
+                                child: ChoiceChip(
+                                  label: Text('${s}x', style: const TextStyle(fontSize: 11)),
+                                  selected: isSelected,
+                                  selectedColor: AppColors.inclusiveAccent.withOpacity(0.2),
+                                  onSelected: (_) {
+                                    setState(() {
+                                      _speechSpeed = s == 1.0 ? 0.9 : (s == 0.8 ? 0.75 : 1.15);
+                                    });
+                                    _ttsService.setRate(_speechSpeed);
+                                  },
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
                       ),
-                      onPressed: () => _speakText(
-                        '${_result!.simpleExplanation}. ${_result!.summary}',
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Title
+                Text(
+                  _result!.title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 14),
 
@@ -247,7 +410,7 @@ class _AiSimplifierScreenState extends ConsumerState<AiSimplifierScreen> {
                   ),
                 ),
 
-                // Educational Video Explainer Card (Дополнительный видеоролик)
+                // Educational Video Explainer Card (YouTube интеграция)
                 if (_result!.videoUrl != null && _result!.videoUrl!.isNotEmpty) ...[
                   const SizedBox(height: 16),
                   AppCard(
