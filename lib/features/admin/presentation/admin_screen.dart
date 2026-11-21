@@ -741,8 +741,197 @@ class _AdminScreenState extends ConsumerState<AdminScreen>
                   ),
               ],
             ),
+            const SizedBox(height: 10),
+            Builder(
+              builder: (context) {
+                final mentorship = ref.watch(teacherMentorshipProvider);
+                final assignedList = mentorship[u.email.toLowerCase()] ?? [];
+                return Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.06),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.groups_rounded, size: 18, color: AppColors.primary),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Закреплено учеников: ${assignedList.length}',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          minimumSize: const Size(0, 32),
+                        ),
+                        onPressed: () => _showAssignStudentsDialog(u, ref.read(registeredUsersProvider)),
+                        icon: const Icon(Icons.person_add_alt_1_rounded, size: 14),
+                        label: const Text('Закрепить учеников', style: TextStyle(fontSize: 11)),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ] else if (u.role == UserRole.student || u.role == UserRole.learner) ...[
+            Builder(
+              builder: (context) {
+                final mentorship = ref.watch(teacherMentorshipProvider);
+                String? assignedTeacherEmail;
+                for (final entry in mentorship.entries) {
+                  if (entry.value.contains(u.email.toLowerCase())) {
+                    assignedTeacherEmail = entry.key;
+                    break;
+                  }
+                }
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.teacherAccent.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.school_rounded, size: 15, color: AppColors.teacherAccent),
+                      const SizedBox(width: 6),
+                      Text(
+                        assignedTeacherEmail != null
+                            ? 'Ответственный учитель: $assignedTeacherEmail'
+                            : 'Ответственный учитель: teacher@edumind.ai',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.teacherAccent,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
           ],
         ],
+      ),
+    );
+  }
+
+  void _showAssignStudentsDialog(UserModel teacher, List<UserModel> allUsers) {
+    final students = allUsers
+        .where((u) => u.role == UserRole.student || u.role == UserRole.learner)
+        .toList();
+    final mentorship = ref.read(teacherMentorshipProvider);
+    final currentlyAssigned = List<String>.from(
+      mentorship[teacher.email.toLowerCase()] ?? [],
+    );
+
+    final selected = Set<String>.from(currentlyAssigned);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Row(
+            children: [
+              Icon(Icons.assignment_ind_rounded, color: AppColors.primary),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Закрепить учеников за учителем',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Преподаватель: ${teacher.name}',
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.teacherAccent),
+                ),
+                Text(
+                  teacher.email,
+                  style: const TextStyle(fontSize: 11, color: AppColors.secondaryTextLight),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Выберите учеников, успеваемость и тесты которых будут отображаться в кабинете этого учителя:',
+                  style: TextStyle(fontSize: 11, color: AppColors.secondaryTextLight),
+                ),
+                const SizedBox(height: 10),
+                if (students.isEmpty)
+                  const Text('Зарегистрированные ученики не найдены.')
+                else
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 280),
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: students.length,
+                      itemBuilder: (ctx, i) {
+                        final st = students[i];
+                        final isChecked = selected.contains(st.email.toLowerCase());
+                        return CheckboxListTile(
+                          dense: true,
+                          value: isChecked,
+                          activeColor: AppColors.primary,
+                          title: Text(st.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                          subtitle: Text(
+                            '${st.email} • ${st.school ?? "Лицей №1"}',
+                            style: const TextStyle(fontSize: 11),
+                          ),
+                          onChanged: (val) {
+                            setDialogState(() {
+                              if (val == true) {
+                                selected.add(st.email.toLowerCase());
+                              } else {
+                                selected.remove(st.email.toLowerCase());
+                              }
+                            });
+                          },
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Отмена'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () {
+                ref.read(teacherMentorshipProvider.notifier).assignStudentsToTeacher(
+                  teacher.email,
+                  selected.toList(),
+                );
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('За учителем ${teacher.name} успешно закреплено ${selected.length} учеников!'),
+                    backgroundColor: AppColors.success,
+                  ),
+                );
+              },
+              child: const Text('Сохранить'),
+            ),
+          ],
+        ),
       ),
     );
   }

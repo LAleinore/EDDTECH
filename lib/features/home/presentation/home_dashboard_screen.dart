@@ -412,13 +412,13 @@ class HomeDashboardScreen extends ConsumerWidget {
 
                 // MindCare Card
                 _ModuleNavCard(
-                  title: loc.tr('module_mindcare_title'),
-                  subtitle: loc.tr('module_mindcare_sub'),
-                  description: loc.tr('module_mindcare_desc'),
-                  icon: Icons.spa_rounded,
+                  title: 'Личный дневник и Поддержка',
+                  subtitle: 'Приватные записи и анонимный чат с учителем',
+                  description: 'Безопасное пространство: ведение личного дневника мыслей и анонимные обращения к учителю.',
+                  icon: Icons.auto_stories_rounded,
                   color: AppColors.mindcareAccent,
-                  badgeText: 'Поддержка & Mood',
-                  onTap: () => context.push('/mindcare/chat'),
+                  badgeText: 'Дневник & Чат',
+                  onTap: () => context.push('/mindcare/diary'),
                 ),
                 const SizedBox(height: 12),
 
@@ -672,14 +672,14 @@ class HomeDashboardScreen extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text(
-              'Эмоциональное самочувствие',
+              'Поддержка и личный дневник',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
             ),
             TextButton(
-              onPressed: () => context.push('/mindcare/mood'),
+              onPressed: () => context.push('/mindcare/diary'),
               child: const Text(
-                'Дневник',
-                style: TextStyle(fontSize: 12, color: AppColors.mindcareAccent),
+                'Все записи',
+                style: TextStyle(fontSize: 12, color: AppColors.mindcareAccent, fontWeight: FontWeight.bold),
               ),
             ),
           ],
@@ -689,7 +689,7 @@ class HomeDashboardScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           color: AppColors.mindcareAccent.withOpacity(0.08),
           border: Border.all(color: AppColors.mindcareAccent.withOpacity(0.3)),
-          onTap: () => context.push('/mindcare/mood'),
+          onTap: () => context.push('/mindcare/diary'),
           child: Row(
             children: [
               Container(
@@ -699,7 +699,7 @@ class HomeDashboardScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: const Icon(
-                  Icons.mood_rounded,
+                  Icons.auto_stories_rounded,
                   color: Colors.white,
                   size: 28,
                 ),
@@ -710,7 +710,7 @@ class HomeDashboardScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Как ваше настроение сегодня?',
+                      'Личный дневник мыслей и переживаний',
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 14,
@@ -718,7 +718,7 @@ class HomeDashboardScreen extends ConsumerWidget {
                     ),
                     SizedBox(height: 2),
                     Text(
-                      'Отметьте настроение и отслеживайте динамику за неделю',
+                      'Записывайте свои мысли, тревоги или идеи в закрытый дневник',
                       style: TextStyle(
                         fontSize: 12,
                         color: AppColors.secondaryTextLight,
@@ -740,19 +740,19 @@ class HomeDashboardScreen extends ConsumerWidget {
           children: [
             Expanded(
               child: _QuickActionCard(
-                title: 'MindCare Чат',
-                icon: Icons.support_agent_rounded,
-                color: AppColors.mindcareAccent,
-                onTap: () => context.push('/mindcare/chat'),
+                title: 'Чат с учителем',
+                icon: Icons.shield_outlined,
+                color: AppColors.primary,
+                onTap: () => context.push('/mindcare/anonymous-chat'),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: _QuickActionCard(
-                title: 'Дыхание 4-7-8',
-                icon: Icons.air_rounded,
-                color: AppColors.primary,
-                onTap: () => context.push('/mindcare/exercises'),
+                title: 'Дневник мыслей',
+                icon: Icons.edit_note_rounded,
+                color: AppColors.mindcareAccent,
+                onTap: () => context.push('/mindcare/diary'),
               ),
             ),
           ],

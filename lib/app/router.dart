@@ -32,7 +32,8 @@ import '../features/teacher/presentation/materials_history_screen.dart';
 // MindCare Screens
 import '../features/mindcare/presentation/mindcare_chat_screen.dart';
 import '../features/mindcare/presentation/mood_tracker_screen.dart';
-import '../features/mindcare/presentation/exercise_timer_screen.dart';
+import '../features/mindcare/presentation/anonymous_teacher_chat_screen.dart';
+import '../features/mindcare/presentation/student_diary_screen.dart';
 
 // Inclusive Screens
 import '../features/inclusive/presentation/ai_simplifier_screen.dart';
@@ -173,7 +174,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/mindcare/exercises',
-        builder: (context, state) => const ExerciseTimerScreen(),
+        builder: (context, state) => const StudentDiaryScreen(),
+      ),
+      GoRoute(
+        path: '/mindcare/anonymous-chat',
+        builder: (context, state) => const AnonymousTeacherChatScreen(),
+      ),
+      GoRoute(
+        path: '/mindcare/diary',
+        builder: (context, state) => const StudentDiaryScreen(),
       ),
       // Inclusive
       GoRoute(

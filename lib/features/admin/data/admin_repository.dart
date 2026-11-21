@@ -19,6 +19,104 @@ final registeredUsersProvider =
       return RegisteredUsersNotifier(prefs);
     });
 
+final teacherMentorshipProvider =
+    StateNotifierProvider<TeacherMentorshipNotifier, Map<String, List<String>>>((
+      ref,
+    ) {
+      final prefs = ref.watch(sharedPreferencesProvider);
+      return TeacherMentorshipNotifier(prefs);
+    });
+
+class TeacherMentorshipNotifier
+    extends StateNotifier<Map<String, List<String>>> {
+  final SharedPreferences _prefs;
+  static const String _storageKey = 'teacher_mentorship_assignments_v2';
+
+  TeacherMentorshipNotifier(this._prefs) : super(_loadInitial(_prefs));
+
+  static Map<String, List<String>> _loadInitial(SharedPreferences prefs) {
+    final raw = prefs.getString(_storageKey);
+    if (raw != null && raw.isNotEmpty) {
+      try {
+        final decoded = json.decode(raw) as Map<String, dynamic>;
+        return decoded.map(
+          (key, value) => MapEntry(key, List<String>.from(value as List)),
+        );
+      } catch (_) {}
+    }
+    return {
+      'teacher@edumind.ai': ['student@edumind.ai', 'learner@edumind.ai'],
+      'aigul.kasymova@nis.edu.kz': ['student@edumind.ai'],
+    };
+  }
+
+  Future<void> _persist() async {
+    final encoded = json.encode(state);
+    await _prefs.setString(_storageKey, encoded);
+  }
+
+  Future<void> reload() async {
+    try {
+      await _prefs.reload();
+      state = _loadInitial(_prefs);
+    } catch (_) {}
+  }
+
+  Future<void> assignStudentsToTeacher(
+    String teacherEmail,
+    List<String> studentEmails,
+  ) async {
+    final cleanTeacher = teacherEmail.trim().toLowerCase();
+    final updated = Map<String, List<String>>.from(state);
+    updated[cleanTeacher] = studentEmails;
+    state = updated;
+    await _persist();
+  }
+}
+
+class StudentAcademicRecord {
+  final String email;
+  final String name;
+  final String school;
+  final int streak;
+  final int xp;
+  final List<Map<String, String>> passedTopics;
+  final List<Map<String, String>> testScores;
+
+  const StudentAcademicRecord({
+    required this.email,
+    required this.name,
+    required this.school,
+    required this.streak,
+    required this.xp,
+    required this.passedTopics,
+    required this.testScores,
+  });
+
+  static StudentAcademicRecord getRecordForUser(UserModel user) {
+    return StudentAcademicRecord(
+      email: user.email,
+      name: user.name,
+      school: user.school ?? 'Лицей №1 г. Астана',
+      streak: user.email == 'student@edumind.ai' ? 7 : 4,
+      xp: user.email == 'student@edumind.ai' ? 1450 : 820,
+      passedTopics: [
+        {'subject': 'Алгебра', 'topic': 'Квадратные уравнения и теорема Виета', 'progress': '100%', 'status': 'Сдано'},
+        {'subject': 'Алгебра', 'topic': 'Арифметическая прогрессия', 'progress': '80%', 'status': 'В процессе'},
+        {'subject': 'Физика', 'topic': 'Законы динамики Ньютона', 'progress': '100%', 'status': 'Сдано'},
+        {'subject': 'Python', 'topic': 'Списки, кортежи и циклы for/while', 'progress': '95%', 'status': 'Сдано'},
+        {'subject': 'Английский', 'topic': 'Present Perfect vs Past Simple', 'progress': '75%', 'status': 'В процессе'},
+      ],
+      testScores: [
+        {'title': 'БЖБ №1: Алгебра (Квадратные уравнения)', 'score': '9 из 10 (90%)', 'grade': 'Отлично (5)', 'date': '18 ноя 2026'},
+        {'title': 'БЖБ №1: Физика (Динамика)', 'score': '8 из 10 (80%)', 'grade': 'Хорошо (4)', 'date': '16 ноя 2026'},
+        {'title': 'Тренажер: Python синтаксис', 'score': '10 из 10 (100%)', 'grade': 'Отлично (5)', 'date': '14 ноя 2026'},
+        {'title': 'Диагностика: Входной срез знаний', 'score': '8.5 из 10', 'grade': 'Хорошо (4)', 'date': '10 ноя 2026'},
+      ],
+    );
+  }
+}
+
 class AdminApplicationsNotifier
     extends StateNotifier<List<TeacherApplication>> {
   final SharedPreferences _prefs;

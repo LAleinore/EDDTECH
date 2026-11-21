@@ -86,26 +86,26 @@ class ModulesScreen extends ConsumerWidget {
 
             // 3. MindCare
             _ModuleCategoryCard(
-              title: loc.tr('module_mindcare_title'),
-              subtitle: loc.tr('module_mindcare_sub'),
-              description: loc.tr('module_mindcare_desc'),
+              title: 'Дневник и Поддержка',
+              subtitle: 'Личные записи и анонимный чат с учителями',
+              description: 'Приватный дневник для фиксации мыслей и тревог, а также безопасный анонимный канал связи с учителями.',
               icon: Icons.spa_rounded,
               color: AppColors.mindcareAccent,
               actions: [
                 _ActionItem(
-                  'Поддерживающий диалог',
-                  Icons.chat_bubble_outline,
-                  () => context.push('/mindcare/chat'),
+                  'Личный дневник мыслей',
+                  Icons.auto_stories_rounded,
+                  () => context.push('/mindcare/diary'),
+                ),
+                _ActionItem(
+                  'Анонимный чат с учителем',
+                  Icons.shield_outlined,
+                  () => context.push('/mindcare/anonymous-chat'),
                 ),
                 _ActionItem(
                   'Дневник настроения',
                   Icons.mood,
                   () => context.push('/mindcare/mood'),
-                ),
-                _ActionItem(
-                  'Дыхательные практики',
-                  Icons.air,
-                  () => context.push('/mindcare/exercises'),
                 ),
               ],
             ),
