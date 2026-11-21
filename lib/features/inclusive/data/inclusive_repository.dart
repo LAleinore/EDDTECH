@@ -2,24 +2,33 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/services/ai_service.dart';
 import '../../auth/data/auth_repository.dart';
 import '../domain/inclusive_material_model.dart';
 
 final inclusiveRepositoryProvider = Provider<InclusiveRepository>((ref) {
   final apiClient = ref.watch(apiClientProvider);
+  final aiService = ref.watch(aiServiceProvider);
   final prefs = ref.watch(sharedPreferencesProvider);
-  return InclusiveRepository(apiClient: apiClient, prefs: prefs);
+  return InclusiveRepository(
+    apiClient: apiClient,
+    aiService: aiService,
+    prefs: prefs,
+  );
 });
 
 class InclusiveRepository {
   final ApiClient _apiClient;
+  final AiService _aiService;
   final SharedPreferences _prefs;
 
   InclusiveRepository({
     required ApiClient apiClient,
+    required AiService aiService,
     required SharedPreferences prefs,
-  }) : _apiClient = apiClient,
-       _prefs = prefs;
+  })  : _apiClient = apiClient,
+        _aiService = aiService,
+        _prefs = prefs;
 
   static const String _materialsKey = 'inclusive_saved_materials_v1';
 
@@ -28,6 +37,62 @@ class InclusiveRepository {
     String targetGrade = 'elementary',
     String language = 'ru',
   }) async {
+    // 1. Try Live AI simplification
+    try {
+      final prompt =
+          'Адаптируй и упрости следующий текст для ученика ($targetGrade уровень).\n'
+          'Текст: "$text"\nЯзык: ${language == 'kk' ? 'казахский' : 'русский'}\n'
+          'Ответь строго валидным JSON со следующей структурой без markdown:\n'
+          '{\n'
+          '  "title": "Заголовок адаптированного текста",\n'
+          '  "simpleExplanation": "Объяснение максимально простыми словами",\n'
+          '  "summary": "Главная суть в 1-2 предложениях",\n'
+          '  "stepByStepGuide": ["Шаг 1", "Шаг 2", "Шаг 3"],\n'
+          '  "keyConcepts": [\n'
+          '    {"term": "Термин 1", "definition": "Простое определение"},\n'
+          '    {"term": "Термин 2", "definition": "Простое определение"}\n'
+          '  ],\n'
+          '  "practicalExamples": ["Жизненный понятный пример"]\n'
+          '}';
+
+      final aiText = await _aiService.completePrompt(
+        prompt,
+        systemPrompt:
+            'Ты добрый и понятный педагог Inclusive AI. Твоя задача — сделать любой научный или учебный текст кристально ясным и доступным для каждого ребенка.',
+        temperature: 0.5,
+      );
+
+      final dynamic parsed = AiService.parseJsonSafely(aiText);
+      if (parsed is Map<String, dynamic>) {
+        final concepts = (parsed['keyConcepts'] as List?)
+                ?.map((c) => KeyConceptModel(
+                      term: c['term']?.toString() ?? '',
+                      definition: c['definition']?.toString() ?? '',
+                    ))
+                .toList() ??
+            [];
+
+        final result = SimplifiedResultModel(
+          title: parsed['title']?.toString() ?? 'Адаптированный материал',
+          simpleExplanation: parsed['simpleExplanation']?.toString() ?? '',
+          summary: parsed['summary']?.toString() ?? '',
+          stepByStepGuide: (parsed['stepByStepGuide'] as List?)
+                  ?.map((s) => s.toString())
+                  .toList() ??
+              [],
+          keyConcepts: concepts,
+          practicalExamples: (parsed['practicalExamples'] as List?)
+                  ?.map((e) => e.toString())
+                  .toList() ??
+              [],
+        );
+
+        _saveLocalMaterial(text, result);
+        return result;
+      }
+    } catch (_) {}
+
+    // 2. Try Backend API
     try {
       final res = await _apiClient.dio.post(
         '/inclusive/simplify',
@@ -39,7 +104,7 @@ class InclusiveRepository {
       _saveLocalMaterial(text, result);
       return result;
     } catch (_) {
-      // Offline / Demo Mode Fallback
+      // 3. Fallback
       final fallback = SimplifiedResultModel(
         title: language == 'kk'
             ? "Мәтінді қарапайым тілмен түсіндіру"
@@ -75,22 +140,36 @@ class InclusiveRepository {
     }
   }
 
-  void _saveLocalMaterial(String originalText, SimplifiedResultModel result) {
-    final raw = _prefs.getString(_materialsKey);
-    List<Map<String, dynamic>> list = [];
-    if (raw != null) {
-      try {
-        list = List<Map<String, dynamic>>.from(json.decode(raw));
-      } catch (_) {}
+  Future<List<Map<String, dynamic>>> getSavedMaterials() async {
+    try {
+      final res = await _apiClient.dio.get('/inclusive/materials');
+      return (res.data as List).map((e) => Map<String, dynamic>.from(e)).toList();
+    } catch (_) {
+      return _getLocalMaterials();
     }
+  }
 
+  void _saveLocalMaterial(String originalText, SimplifiedResultModel result) {
+    final list = _getLocalMaterials();
     list.insert(0, {
-      'id': 'inc-${DateTime.now().millisecondsSinceEpoch}',
+      'id': 'mat-${DateTime.now().millisecondsSinceEpoch}',
       'original': originalText,
+      'title': result.title,
+      'summary': result.summary,
       'simplified': result.toMap(),
-      'date': DateTime.now().toIso8601String(),
+      'created_at': DateTime.now().toIso8601String(),
     });
-
     _prefs.setString(_materialsKey, json.encode(list));
+  }
+
+  List<Map<String, dynamic>> _getLocalMaterials() {
+    final raw = _prefs.getString(_materialsKey);
+    if (raw == null) return [];
+    try {
+      final decoded = json.decode(raw) as List;
+      return decoded.map((e) => Map<String, dynamic>.from(e)).toList();
+    } catch (_) {
+      return [];
+    }
   }
 }

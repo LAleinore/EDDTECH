@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/services/ai_service.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../auth/domain/user_model.dart';
 import '../../mindcare/data/mindcare_repository.dart';
@@ -7,13 +8,19 @@ import '../../mindcare/domain/chat_message_model.dart';
 
 final assistantRepositoryProvider = Provider<AssistantRepository>((ref) {
   final apiClient = ref.watch(apiClientProvider);
-  return AssistantRepository(apiClient: apiClient);
+  final aiService = ref.watch(aiServiceProvider);
+  return AssistantRepository(apiClient: apiClient, aiService: aiService);
 });
 
 class AssistantRepository {
   final ApiClient _apiClient;
+  final AiService _aiService;
 
-  AssistantRepository({required ApiClient apiClient}) : _apiClient = apiClient;
+  AssistantRepository({
+    required ApiClient apiClient,
+    required AiService aiService,
+  })  : _apiClient = apiClient,
+        _aiService = aiService;
 
   Future<ChatMessageModel> sendMessage({
     required String message,
@@ -21,7 +28,7 @@ class AssistantRepository {
     required UserRole role,
     String language = 'ru',
   }) async {
-    // Client-side instant deterministic crisis guardrail
+    // 1. Client-side instant deterministic crisis guardrail
     if (MindcareRepository.checkCrisis(message)) {
       return ChatMessageModel(
         id: 'safety-${DateTime.now().millisecondsSinceEpoch}',
@@ -34,35 +41,125 @@ class AssistantRepository {
       );
     }
 
+    // 2. First attempt live AI generation via AiService
     try {
-      final res = await _apiClient.dio.post(
-        '/assistant/chat',
-        data: {
-          'message': message,
-          'history': history
-              .map((h) => {'role': h.role, 'content': h.content})
-              .toList(),
-          'role': role.key,
-          'language': language,
-        },
+      final systemPrompt = _buildSystemPrompt(role, language);
+      final messages = _formatHistory(history, message);
+
+      final reply = await _aiService.chat(
+        messages: messages,
+        systemPrompt: systemPrompt,
+        temperature: 0.7,
       );
+
+      final route = _detectSuggestedRoute(reply, role);
 
       return ChatMessageModel(
         id: 'assistant-${DateTime.now().millisecondsSinceEpoch}',
         role: 'assistant',
-        content: res.data['reply'] ?? '',
-        isCrisis: res.data['isCrisis'] ?? false,
-        emergencyHelpline: res.data['emergencyHelpline'],
-        suggestedTechnique: res.data['suggestedRoute'],
+        content: reply,
+        isCrisis: false,
+        suggestedTechnique: route,
         timestamp: DateTime.now(),
       );
     } catch (_) {
-      return _buildLocalFallback(
-        message: message,
-        role: role,
-        language: language,
-      );
+      // 3. Fallback attempt: if backend API server is available, try it
+      try {
+        final res = await _apiClient.dio.post(
+          '/assistant/chat',
+          data: {
+            'message': message,
+            'history': history
+                .map((h) => {'role': h.role, 'content': h.content})
+                .toList(),
+            'role': role.key,
+            'language': language,
+          },
+        );
+
+        return ChatMessageModel(
+          id: 'assistant-${DateTime.now().millisecondsSinceEpoch}',
+          role: 'assistant',
+          content: res.data['reply'] ?? '',
+          isCrisis: res.data['isCrisis'] ?? false,
+          emergencyHelpline: res.data['emergencyHelpline'],
+          suggestedTechnique: res.data['suggestedRoute'],
+          timestamp: DateTime.now(),
+        );
+      } catch (_) {
+        // 4. Offline fallback if device has no internet connection
+        return _buildLocalFallback(
+          message: message,
+          role: role,
+          language: language,
+        );
+      }
     }
+  }
+
+  String _buildSystemPrompt(UserRole role, String language) {
+    if (role == UserRole.teacher) {
+      return 'Ты — Daryn Ustaz AI, продвинутый методический ассистент и наставник для преподавателей Казахстана. '
+          'Твоя задача: помогать учителям с поурочными планами (ҚМЖ), критериями оценивания и дескрипторами, '
+          'заданиями БЖБ/ТЖБ, интерактивными педагогическими методиками, практическими заданиями и тестами. '
+          'Отвечай профессионально, педагогически структурированно, понятно и по существу, адаптируя ответ под предмет и класс. '
+          'Язык ответа: ${language == 'kk' ? 'казахский' : 'русский'} (или язык запроса учителя).';
+    } else if (role == UserRole.learner) {
+      return 'Ты — EduMind Inclusive AI, заботливый и понятный образовательный помощник для учащихся, в том числе с особыми потребностями. '
+          'Твоя цель: объяснять любые сложные школьные или научные темы простыми словами, наглядными аналогиями из жизни, '
+          'короткими шагами и без перегруженных терминов. Будь очень доброжелательным, поддерживающим и терпеливым. '
+          'Язык ответа: ${language == 'kk' ? 'казахский' : 'русский'}.';
+    } else {
+      return 'Ты — EduMind AI, умный, гибкий и живой персональный AI-репетитор для школьников и студентов (Казахстан). '
+          'Твоя задача: помогать разбираться в любых учебных предметах (математика, алгебра, геометрия, физика, химия, биология, информатика, Python/C++, история, литература, языки). '
+          'ПРАВИЛА: '
+          '1. НЕ используй заученные шаблонные фразы. Отвечай прямо на конкретный вопрос учащегося. '
+          '2. Давай пошаговые решения, математические формулы, примеры кода с комментариями, когда это уместно. '
+          '3. Пиши живо, доброжелательно, понятно и структурированно. '
+          '4. Отвечай на языке запроса (русский или казахский).';
+    }
+  }
+
+  List<Map<String, String>> _formatHistory(
+    List<ChatMessageModel> history,
+    String currentMessage,
+  ) {
+    final list = <Map<String, String>>[];
+    // Take up to 10 recent messages for conversational context
+    final recent = history.length > 10
+        ? history.sublist(history.length - 10)
+        : history;
+
+    for (final m in recent) {
+      if (m.role == 'user' || m.role == 'assistant') {
+        if (!m.isCrisis && m.content.isNotEmpty) {
+          list.add({'role': m.role, 'content': m.content});
+        }
+      }
+    }
+
+    if (list.isEmpty || list.last['content'] != currentMessage) {
+      list.add({'role': 'user', 'content': currentMessage});
+    }
+
+    return list;
+  }
+
+  String? _detectSuggestedRoute(String reply, UserRole role) {
+    final lower = reply.toLowerCase();
+    if (role == UserRole.teacher) {
+      if (lower.contains('тест') || lower.contains('бжб') || lower.contains('тжб')) {
+        return '/teacher/quiz-generator';
+      }
+      if (lower.contains('қмж') || lower.contains('поурочн') || lower.contains('план урок')) {
+        return '/teacher/lesson-generator';
+      }
+    } else if (role == UserRole.learner) {
+      if (lower.contains('упрощ') || lower.contains('простыми словами')) {
+        return '/inclusive/simplifier';
+      }
+    }
+    return null;
   }
 
   ChatMessageModel _buildLocalFallback({
@@ -96,26 +193,17 @@ class AssistantRepository {
     } else if (role == UserRole.learner) {
       reply =
           'Давай разберём «$message» простыми словами:\n'
-          '1. Сначала выделим главную мысль.\n'
-          '2. Разделим объяснение на 3 коротких шага.\n'
-          '3. Подберём понятный пример из повседневной жизни.\n\n'
+          '1. Сначала выделим главную мысль темы.\n'
+          '2. Разделим объяснение на 3 понятных шага.\n'
+          '3. Закрепим на примере из повседневной жизни.\n\n'
           'Нажми на иконку динамика, чтобы прослушать ответ вслух.';
       suggestedRoute = '/inclusive/simplifier';
     } else {
-      if (lower.contains('днк') || lower.contains('рнк')) {
-        reply =
-            'Главные отличия ДНК и РНК:\n'
-            '• ДНК — двойная спираль, РНК — одна цепочка.\n'
-            '• Сахар: дезоксирибоза (ДНК) vs рибоза (РНК).\n'
-            '• Основания: тимин в ДНК заменён на урацил в РНК.\n'
-            '• Функция: ДНК хранит генетический код, РНК участвует в синтезе белка.';
-      } else {
-        reply =
-            'Структурированный план по запросу «$message»:\n'
-            '1. Изучите базовые определения и ключевую идею.\n'
-            '2. Разберите 2–3 практических примера.\n'
-            '3. Закрепите материал методом активного повторения (пересказ своими словами).';
-      }
+      reply =
+          'Ответ на запрос «$message»:\n\n'
+          '1. Ключевая концепция: суть состоит в понимании основных принципов и взаимосвязей.\n'
+          '2. Практический алгоритм: разбейте задачу на подшаги и проверьте граничные условия.\n'
+          '3. Рекомендация: повторите материал через решение 2–3 аналогичных задач.';
     }
 
     return ChatMessageModel(
