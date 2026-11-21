@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../core/widgets/cards.dart';
+import '../../auth/data/auth_repository.dart';
 import '../data/gamification_repository.dart';
 import '../domain/achievement_model.dart';
 
@@ -32,11 +33,12 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
   Widget build(BuildContext context) {
     final gamification = ref.watch(gamificationProvider);
     final streak = gamification.streak;
+    final currentUser = ref.watch(authNotifierProvider).user;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Достижения и Стрики',
+          'Прогресс и Достижения',
           style: TextStyle(fontWeight: FontWeight.w700),
         ),
         bottom: TabBar(
@@ -46,304 +48,312 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
           indicatorColor: AppColors.primary,
           indicatorWeight: 3,
           tabs: const [
-            Tab(text: 'Ударный режим'),
-            Tab(text: 'Награды'),
-            Tab(text: 'Лидерборд'),
+            Tab(text: 'Стрик и Уровень'),
+            Tab(text: 'Достижения'),
+            Tab(text: 'Рейтинг'),
           ],
         ),
       ),
       body: TabBarView(
         controller: _tabController,
         children: [
-          // TAB 1: STREAK & XP PROGRESS
+          // TAB 1: STREAK & LEVEL
           _buildStreakTab(context, streak),
 
           // TAB 2: ACHIEVEMENTS
           _buildAchievementsTab(context, gamification.achievements),
 
           // TAB 3: LEADERBOARD
-          _buildLeaderboardTab(context, gamification.leaderboard),
+          _buildLeaderboardTab(context, gamification.leaderboard, currentUser?.name),
         ],
       ),
     );
   }
 
   Widget _buildStreakTab(BuildContext context, StreakInfo streak) {
-    const dayNames = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'];
+    const dayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+    final todayIndex = (DateTime.now().weekday - 1) % 7;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Main Flame Hero Card
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFE8590C), Color(0xFFF76707), Color(0xFFFF922B)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFFE8590C).withOpacity(0.35),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.local_fire_department_rounded,
-                        color: Colors.white,
-                        size: 42,
-                      ),
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      children: [
+        // Clean Realistic Streak Card
+        AppCard(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppColors.warning.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    const SizedBox(width: 14),
-                    Column(
+                    child: const Icon(
+                      Icons.local_fire_department_rounded,
+                      color: AppColors.warning,
+                      size: 26,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${streak.currentStreak} ДНЕЙ',
+                          'Ударный режим: ${streak.currentStreak} ${streak.currentStreak == 1 ? "день" : (streak.currentStreak < 5 ? "дня" : "дней")}',
                           style: const TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                            letterSpacing: -0.5,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
+                        const SizedBox(height: 2),
                         const Text(
-                          'Ударный режим активен 🔥',
+                          'Занимайтесь каждый день для сохранения непрерывного прогресса',
                           style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
+                            fontSize: 12,
+                            color: AppColors.secondaryTextLight,
                           ),
                         ),
                       ],
                     ),
-                  ],
-                ),
-                const SizedBox(height: 24),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              const Divider(height: 1),
+              const SizedBox(height: 16),
 
-                // Week days dots
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.18),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: List.generate(7, (index) {
-                      final isDone = streak.weekDaysCompleted[index];
-                      return Column(
-                        children: [
-                          Text(
-                            dayNames[index],
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: isDone
-                                  ? Colors.white
-                                  : Colors.white.withOpacity(0.5),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isDone
-                                  ? Colors.white
-                                  : Colors.white.withOpacity(0.15),
-                            ),
-                            child: Icon(
-                              isDone ? Icons.check_rounded : Icons.lock_outline_rounded,
-                              size: 16,
-                              color: isDone
-                                  ? const Color(0xFFE8590C)
-                                  : Colors.white.withOpacity(0.4),
-                            ),
-                          ),
-                        ],
-                      );
-                    }),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
+              // Calendar Days Row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: List.generate(7, (i) {
+                  final isCompleted = streak.weekDaysCompleted[i];
+                  final isToday = i == todayIndex;
 
-          // Level and XP Card
-          AppCard(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(
-                            Icons.military_tech_rounded,
-                            color: AppColors.primary,
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Уровень ${streak.level}',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            Text(
-                              streak.levelTitle,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: AppColors.secondaryTextLight,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryLight,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        '⚡ ${streak.totalXp} XP',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Прогресс уровня',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                    ),
-                    Text(
-                      '${streak.currentLevelXp} / ${streak.xpForNextLevel} XP',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: LinearProgressIndicator(
-                    value: streak.progressToNextLevel,
-                    minHeight: 10,
-                    backgroundColor: AppColors.dividerLight,
-                    valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Streak Protection & Stats Card
-          AppCard(
-            padding: const EdgeInsets.all(18),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.mindcareAccent.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Icon(
-                    Icons.ac_unit_rounded,
-                    color: AppColors.mindcareAccent,
-                    size: 26,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  return Column(
                     children: [
-                      const Text(
-                        'Заморозка стрика',
-                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
-                      ),
-                      const SizedBox(height: 2),
                       Text(
-                        'Доступно: ${streak.freezesAvailable} защиты от пропуска дня',
-                        style: const TextStyle(
+                        dayNames[i],
+                        style: TextStyle(
                           fontSize: 12,
-                          color: AppColors.secondaryTextLight,
+                          fontWeight: isToday ? FontWeight.w800 : FontWeight.w500,
+                          color: isToday ? AppColors.primary : AppColors.secondaryTextLight,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isCompleted
+                              ? AppColors.primary
+                              : (isToday
+                                  ? AppColors.primary.withOpacity(0.1)
+                                  : AppColors.surfaceVariantLight),
+                          border: isToday
+                              ? Border.all(color: AppColors.primary, width: 1.5)
+                              : null,
+                        ),
+                        child: Icon(
+                          isCompleted ? Icons.check_rounded : Icons.circle,
+                          size: isCompleted ? 18 : 6,
+                          color: isCompleted
+                              ? Colors.white
+                              : (isToday
+                                  ? AppColors.primary
+                                  : AppColors.secondaryTextLight.withOpacity(0.4)),
                         ),
                       ),
                     ],
+                  );
+                }),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Level & Experience Card
+        AppCard(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryLight,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(
+                          Icons.school_rounded,
+                          color: AppColors.primary,
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Уровень ${streak.level}',
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          Text(
+                            streak.levelTitle,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.secondaryTextLight,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryLight,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${streak.totalXp} XP',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Прогресс до следующего уровня',
+                    style: TextStyle(fontSize: 12, color: AppColors.secondaryTextLight),
+                  ),
+                  Text(
+                    '${streak.currentLevelXp} / ${streak.xpForNextLevel} XP',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: LinearProgressIndicator(
+                  value: streak.progressToNextLevel,
+                  minHeight: 8,
+                  backgroundColor: AppColors.dividerLight,
+                  valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
                 ),
-                OutlinedButton(
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Clean Streak Freeze Protection (Robust Full-Width Layout)
+        AppCard(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppColors.mindcareAccent.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.shield_outlined,
+                      color: AppColors.mindcareAccent,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Защита непрерывного стрика',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          streak.freezesAvailable > 0
+                              ? 'В запасе: ${streak.freezesAvailable} день защиты. Если вы пропустите день, стрик сохранится.'
+                              : 'Запас защиты исчерпан. Занимайтесь ежедневно для поддержания серии.',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.secondaryTextLight,
+                            height: 1.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
                   onPressed: streak.freezesAvailable > 0
                       ? () {
                           ref.read(gamificationProvider.notifier).useFreeze();
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('Заморозка активирована! Стрик защищен на сегодня.'),
+                              content: Text('Защита активирована! Серия защищена на случай пропуска.'),
                             ),
                           );
                         }
                       : null,
+                  icon: const Icon(Icons.ac_unit_rounded, size: 18),
+                  label: Text(
+                    streak.freezesAvailable > 0
+                        ? 'Активировать защиту на сегодня'
+                        : 'Защита уже активна',
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
                   style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  child: const Text('Применить', style: TextStyle(fontSize: 12)),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -351,16 +361,11 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
     final unlockedCount = achievements.where((a) => a.isUnlocked).length;
 
     return ListView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       children: [
         // Summary Header Card
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppColors.dividerLight),
-          ),
+        AppCard(
+          padding: const EdgeInsets.all(16),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -368,47 +373,47 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Разблокировано наград',
-                    style: TextStyle(fontSize: 13, color: AppColors.secondaryTextLight),
+                    'Открытые достижения',
+                    style: TextStyle(fontSize: 12, color: AppColors.secondaryTextLight),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     '$unlockedCount из ${achievements.length}',
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
                   ),
                 ],
               ),
               CircularProgressIndicator(
                 value: achievements.isNotEmpty ? unlockedCount / achievements.length : 0,
-                strokeWidth: 6,
+                strokeWidth: 5,
                 backgroundColor: AppColors.dividerLight,
-                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.success),
+                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 14),
 
         ...achievements.map((ach) {
           return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.only(bottom: 10),
             child: AppCard(
               padding: const EdgeInsets.all(16),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: ach.isUnlocked
-                          ? ach.color.withOpacity(0.14)
-                          : Colors.grey.withOpacity(0.12),
+                          ? ach.color.withOpacity(0.12)
+                          : Colors.grey.withOpacity(0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       ach.icon,
                       color: ach.isUnlocked ? ach.color : Colors.grey,
-                      size: 26,
+                      size: 22,
                     ),
                   ),
                   const SizedBox(width: 14),
@@ -423,35 +428,22 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
                                 ach.title,
                                 style: TextStyle(
                                   fontWeight: FontWeight.w700,
-                                  fontSize: 15,
-                                  color: ach.isUnlocked
-                                      ? null
-                                      : AppColors.secondaryTextLight,
+                                  fontSize: 14,
+                                  color: ach.isUnlocked ? null : AppColors.secondaryTextLight,
                                 ),
                               ),
                             ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: ach.isUnlocked
-                                    ? AppColors.primaryLight
-                                    : Colors.grey.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                '+${ach.xpReward} XP',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  color: ach.isUnlocked
-                                      ? AppColors.primary
-                                      : Colors.grey,
-                                ),
+                            Text(
+                              '+${ach.xpReward} XP',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: ach.isUnlocked ? AppColors.primary : Colors.grey,
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 3),
                         Text(
                           ach.description,
                           style: const TextStyle(
@@ -459,17 +451,15 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
                             color: AppColors.secondaryTextLight,
                           ),
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 8),
                         Row(
                           children: [
                             Expanded(
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(4),
                                 child: LinearProgressIndicator(
-                                  value: ach.maxProgress > 0
-                                      ? ach.progress / ach.maxProgress
-                                      : 0,
-                                  minHeight: 6,
+                                  value: ach.maxProgress > 0 ? ach.progress / ach.maxProgress : 0,
+                                  minHeight: 5,
                                   backgroundColor: AppColors.dividerLight,
                                   valueColor: AlwaysStoppedAnimation<Color>(
                                     ach.isUnlocked ? ach.color : Colors.grey,
@@ -479,12 +469,10 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
                             ),
                             const SizedBox(width: 10),
                             Text(
-                              ach.isUnlocked
-                                  ? 'Выполнено'
-                                  : '${ach.progress}/${ach.maxProgress}',
+                              ach.isUnlocked ? 'Выполнено' : '${ach.progress}/${ach.maxProgress}',
                               style: TextStyle(
                                 fontSize: 11,
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w600,
                                 color: ach.isUnlocked
                                     ? AppColors.success
                                     : AppColors.secondaryTextLight,
@@ -504,85 +492,75 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
     );
   }
 
-  Widget _buildLeaderboardTab(BuildContext context, List<LeaderboardUser> leaderboard) {
+  Widget _buildLeaderboardTab(
+    BuildContext context,
+    List<LeaderboardUser> leaderboard,
+    String? currentUserName,
+  ) {
     return ListView.builder(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       itemCount: leaderboard.length,
       itemBuilder: (context, index) {
-        final user = leaderboard[index];
-
-        Color? rankColor;
-        if (user.rank == 1) rankColor = const Color(0xFFFFD700); // Gold
-        if (user.rank == 2) rankColor = const Color(0xFFC0C0C0); // Silver
-        if (user.rank == 3) rankColor = const Color(0xFFCD7F32); // Bronze
+        final student = leaderboard[index];
 
         return Padding(
           padding: const EdgeInsets.only(bottom: 10),
           child: AppCard(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            color: user.isCurrentUser
-                ? AppColors.primary.withOpacity(0.08)
-                : null,
-            border: user.isCurrentUser
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            color: student.isCurrentUser ? AppColors.primaryLight.withOpacity(0.5) : null,
+            border: student.isCurrentUser
                 ? Border.all(color: AppColors.primary, width: 1.5)
                 : null,
             child: Row(
               children: [
-                // Rank Badge
+                // Rank number
                 Container(
-                  width: 32,
-                  height: 32,
+                  width: 28,
                   alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: rankColor != null
-                        ? rankColor.withOpacity(0.2)
-                        : Colors.transparent,
-                    shape: BoxShape.circle,
-                  ),
                   child: Text(
-                    '${user.rank}',
+                    '${student.rank}',
                     style: TextStyle(
                       fontSize: 15,
-                      fontWeight: FontWeight.w900,
-                      color: rankColor ?? AppColors.secondaryTextLight,
+                      fontWeight: FontWeight.w800,
+                      color: student.rank <= 3 ? AppColors.primary : AppColors.secondaryTextLight,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+
+                // Initials Avatar
+                CircleAvatar(
+                  radius: 18,
+                  backgroundColor: student.isCurrentUser ? AppColors.primary : AppColors.primaryLight,
+                  child: Text(
+                    student.name.isNotEmpty ? student.name[0].toUpperCase() : 'У',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: student.isCurrentUser ? Colors.white : AppColors.primary,
                     ),
                   ),
                 ),
                 const SizedBox(width: 12),
 
-                // Avatar
-                CircleAvatar(
-                  radius: 18,
-                  backgroundColor: user.isCurrentUser
-                      ? AppColors.primary
-                      : AppColors.primaryLight,
-                  child: Text(
-                    user.name.isNotEmpty ? user.name[0] : 'U',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: user.isCurrentUser ? Colors.white : AppColors.primary,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 14),
-
-                // User details
+                // Name & School
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        user.name,
+                        student.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 14,
-                          fontWeight: user.isCurrentUser
-                              ? FontWeight.w800
-                              : FontWeight.w600,
+                          fontWeight: student.isCurrentUser ? FontWeight.w800 : FontWeight.w600,
                         ),
                       ),
                       Text(
-                        user.school,
+                        student.school,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           fontSize: 11,
                           color: AppColors.secondaryTextLight,
@@ -592,12 +570,12 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
                   ),
                 ),
 
-                // XP and streak badge
+                // XP Score
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      '${user.xp} XP',
+                      '${student.xp} XP',
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w800,
@@ -605,11 +583,10 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
                       ),
                     ),
                     Text(
-                      '🔥 ${user.streak} дн',
+                      '🔥 ${student.streak} дн',
                       style: const TextStyle(
                         fontSize: 11,
-                        color: AppColors.warning,
-                        fontWeight: FontWeight.bold,
+                        color: AppColors.secondaryTextLight,
                       ),
                     ),
                   ],

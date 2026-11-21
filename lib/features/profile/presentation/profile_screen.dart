@@ -8,6 +8,7 @@ import '../../../core/widgets/buttons.dart';
 import '../../../core/widgets/cards.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../auth/domain/user_model.dart';
+import '../../gamification/data/gamification_repository.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -18,6 +19,8 @@ class ProfileScreen extends ConsumerWidget {
     final loc = AppLocalizations(AppLanguage.fromCode(user?.language ?? 'ru'));
     final authNotifier = ref.read(authNotifierProvider.notifier);
     final isDark = ref.watch(themeProvider);
+    final gamification = ref.watch(gamificationProvider);
+    final streak = gamification.streak;
 
     return Scaffold(
       appBar: AppBar(title: Text(loc.tr('profile'))),
@@ -99,13 +102,13 @@ class ProfileScreen extends ConsumerWidget {
                   children: [
                     Column(
                       children: [
-                        const Row(
+                        Row(
                           children: [
-                            Icon(Icons.local_fire_department_rounded, color: Color(0xFFE8590C), size: 20),
-                            SizedBox(width: 4),
+                            const Icon(Icons.local_fire_department_rounded, color: Color(0xFFE8590C), size: 20),
+                            const SizedBox(width: 4),
                             Text(
-                              '7 дней',
-                              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                              '${streak.currentStreak} ${streak.currentStreak == 1 ? "день" : "дня"}',
+                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
                             ),
                           ],
                         ),
@@ -119,13 +122,13 @@ class ProfileScreen extends ConsumerWidget {
                     Container(height: 32, width: 1, color: AppColors.dividerLight),
                     Column(
                       children: [
-                        const Row(
+                        Row(
                           children: [
-                            Icon(Icons.bolt_rounded, color: AppColors.primary, size: 20),
-                            SizedBox(width: 4),
+                            const Icon(Icons.bolt_rounded, color: AppColors.primary, size: 20),
+                            const SizedBox(width: 4),
                             Text(
-                              '1,450',
-                              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                              '${streak.totalXp}',
+                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
                             ),
                           ],
                         ),
@@ -139,13 +142,13 @@ class ProfileScreen extends ConsumerWidget {
                     Container(height: 32, width: 1, color: AppColors.dividerLight),
                     Column(
                       children: [
-                        const Row(
+                        Row(
                           children: [
-                            Icon(Icons.military_tech_rounded, color: AppColors.warning, size: 20),
-                            SizedBox(width: 4),
+                            const Icon(Icons.military_tech_rounded, color: AppColors.warning, size: 20),
+                            const SizedBox(width: 4),
                             Text(
-                              'Ур. 4',
-                              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                              'Ур. ${streak.level}',
+                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
                             ),
                           ],
                         ),

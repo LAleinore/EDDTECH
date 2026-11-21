@@ -6,6 +6,7 @@ import '../../../app/theme/app_colors.dart';
 import '../../../core/widgets/cards.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../auth/domain/user_model.dart';
+import '../../gamification/data/gamification_repository.dart';
 
 class HomeDashboardScreen extends ConsumerWidget {
   const HomeDashboardScreen({super.key});
@@ -21,6 +22,9 @@ class HomeDashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authNotifierProvider).user;
     final loc = AppLocalizations(AppLanguage.fromCode(user?.language ?? 'ru'));
+    final gamification = ref.watch(gamificationProvider);
+    final currentStreak = gamification.streak.currentStreak;
+    final totalXp = gamification.streak.totalXp;
 
     final userName = user?.name ?? 'Пользователь';
     final role = user?.role ?? UserRole.student;
@@ -139,14 +143,14 @@ class HomeDashboardScreen extends ConsumerWidget {
                           color: const Color(0xFFE8590C).withOpacity(0.12),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.local_fire_department_rounded, color: Color(0xFFE8590C), size: 16),
-                            SizedBox(width: 4),
+                            const Icon(Icons.local_fire_department_rounded, color: Color(0xFFE8590C), size: 16),
+                            const SizedBox(width: 4),
                             Text(
-                              '7 дней стрик',
-                              style: TextStyle(
+                              '$currentStreak ${currentStreak == 1 ? "день" : "дня"} стрик',
+                              style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w800,
                                 color: Color(0xFFE8590C),
@@ -162,14 +166,14 @@ class HomeDashboardScreen extends ConsumerWidget {
                           color: AppColors.primary.withOpacity(0.12),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.bolt_rounded, color: AppColors.primary, size: 16),
-                            SizedBox(width: 4),
+                            const Icon(Icons.bolt_rounded, color: AppColors.primary, size: 16),
+                            const SizedBox(width: 4),
                             Text(
-                              '1,450 XP',
-                              style: TextStyle(
+                              '$totalXp XP',
+                              style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w800,
                                 color: AppColors.primary,
@@ -326,7 +330,7 @@ class HomeDashboardScreen extends ConsumerWidget {
               ] else if (role == UserRole.learner) ...[
                 _buildLearnerSection(context, loc),
               ] else ...[
-                _buildStudentSection(context, loc),
+                _buildStudentSection(context, loc, currentStreak),
               ],
 
               const SizedBox(height: 24),
@@ -544,7 +548,11 @@ class HomeDashboardScreen extends ConsumerWidget {
   }
 
   // Student Specific Dashboard Section
-  Widget _buildStudentSection(BuildContext context, AppLocalizations loc) {
+  Widget _buildStudentSection(
+    BuildContext context,
+    AppLocalizations loc,
+    int currentStreak,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -562,7 +570,7 @@ class HomeDashboardScreen extends ConsumerWidget {
                 'Все награды',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Color(0xFFE8590C),
+                  color: AppColors.primary,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -572,44 +580,39 @@ class HomeDashboardScreen extends ConsumerWidget {
         const SizedBox(height: 8),
         AppCard(
           padding: const EdgeInsets.all(16),
-          color: const Color(0xFFFFF4E6),
-          border: Border.all(color: const Color(0xFFFFD8A8)),
           onTap: () => context.push('/achievements'),
           child: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFE8590C), Color(0xFFFFA94D)],
-                  ),
+                  color: AppColors.warning.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: const Icon(
                   Icons.local_fire_department_rounded,
-                  color: Colors.white,
-                  size: 28,
+                  color: AppColors.warning,
+                  size: 26,
                 ),
               ),
               const SizedBox(width: 14),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '7 дней непрерывного обучения!',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
+                      '$currentStreak ${currentStreak == 1 ? "день" : "дня"} непрерывного обучения',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
                         fontSize: 14,
-                        color: Color(0xFFD9480F),
                       ),
                     ),
-                    SizedBox(height: 2),
-                    Text(
-                      'Решите 1 задачу сегодня, чтобы получить +50 XP и сохранить стрик 🔥',
+                    const SizedBox(height: 2),
+                    const Text(
+                      'Решите 1 задачу сегодня, чтобы получить +50 XP и сохранить стрик',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Color(0xFF862E9C),
+                        color: AppColors.secondaryTextLight,
                       ),
                     ),
                   ],
@@ -618,7 +621,7 @@ class HomeDashboardScreen extends ConsumerWidget {
               const Icon(
                 Icons.arrow_forward_ios_rounded,
                 size: 16,
-                color: Color(0xFFD9480F),
+                color: AppColors.primary,
               ),
             ],
           ),
