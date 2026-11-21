@@ -124,33 +124,28 @@ class AuthRepository {
 
     // 1. Admin Login
     if (cleanEmail == 'admin@edumind.kz' || cleanEmail == 'admin') {
-      await Future.delayed(const Duration(milliseconds: 400));
+      await Future.delayed(const Duration(milliseconds: 300));
       if (password != 'admin2026' && password != '123456' && password != 'Password123!') {
         throw 'Неверный пароль администратора. Введите актуальный пароль.';
       }
-      final updated = adminUser.copyWith(lastLoginAt: DateTime.now());
-      await _storageService.saveAuthToken('admin-session-token');
-      await _storageService.saveUserJson(updated.toJson());
-      return updated;
+      return _persistUser(adminUser);
     }
 
     // 2. Teacher Code Login (Format: TCH-XXXX-KZ)
     if (cleanEmail.startsWith('tch-') || cleanEmail == 'tch-2026-ast') {
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future.delayed(const Duration(milliseconds: 300));
       final updated = teacherDemoUser.copyWith(
         teacherCode: cleanEmail.toUpperCase(),
         lastLoginAt: DateTime.now(),
       );
-      await _storageService.saveAuthToken('teacher-code-token');
-      await _storageService.saveUserJson(updated.toJson());
-      return updated;
+      return _persistUser(updated);
     }
 
     // 3. Preset Role Accounts
     if (cleanEmail == teacherDemoUser.email ||
         cleanEmail == studentDemoUser.email ||
         cleanEmail == learnerDemoUser.email) {
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future.delayed(const Duration(milliseconds: 300));
 
       if (password.length < 6) {
         throw 'Пароль должен содержать минимум 6 символов';
@@ -295,5 +290,85 @@ class AuthRepository {
       await _storageService.setLanguageCode(language);
     }
     return updated;
+  }
+}
+
+class AuthNotifier extends StateNotifier<AuthState> {
+  final AuthRepository _repo;
+
+  AuthNotifier(this._repo) : super(const AuthState()) {
+    _checkSession();
+  }
+
+  Future<void> _checkSession() async {
+    state = state.copyWith(status: AuthStatus.loading);
+    try {
+      final user = await _repo.getSavedSession();
+      if (user != null) {
+        state = state.copyWith(status: AuthStatus.authenticated, user: user);
+      } else {
+        state = state.copyWith(status: AuthStatus.unauthenticated);
+      }
+    } catch (_) {
+      state = state.copyWith(status: AuthStatus.unauthenticated);
+    }
+  }
+
+  Future<void> login({
+    required String email,
+    required String password,
+  }) async {
+    state = state.copyWith(status: AuthStatus.loading, errorMessage: null);
+    try {
+      final user = await _repo.login(email: email, password: password);
+      state = state.copyWith(status: AuthStatus.authenticated, user: user);
+    } catch (e) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: e.toString(),
+      );
+    }
+  }
+
+  Future<void> register({
+    required String name,
+    required String email,
+    required String password,
+    required UserRole role,
+    required String language,
+    String? school,
+    String? city,
+    String? subject,
+    String? teacherCode,
+  }) async {
+    state = state.copyWith(status: AuthStatus.loading, errorMessage: null);
+    try {
+      final user = await _repo.register(
+        name: name,
+        email: email,
+        password: password,
+        role: role,
+        language: language,
+        school: school,
+        city: city,
+        subject: subject,
+        teacherCode: teacherCode,
+      );
+      state = state.copyWith(status: AuthStatus.authenticated, user: user);
+    } catch (e) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: e.toString(),
+      );
+    }
+  }
+
+  Future<void> logout() async {
+    await _repo.logout();
+    state = const AuthState(status: AuthStatus.unauthenticated);
+  }
+
+  Future<void> updateUser(UserModel user) async {
+    state = state.copyWith(user: user);
   }
 }
