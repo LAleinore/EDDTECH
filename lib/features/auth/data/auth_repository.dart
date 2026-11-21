@@ -287,6 +287,10 @@ class AuthRepository {
           'subject': subject,
           'teacher_code': isTeacher ? generatedCode : null,
         },
+        options: Options(
+          sendTimeout: const Duration(milliseconds: 1500),
+          receiveTimeout: const Duration(milliseconds: 1500),
+        ),
       );
 
       final data = response.data;

@@ -30,6 +30,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final String _selectedLang = 'ru';
   bool _consentAgreed = false;
   bool _obscurePassword = true;
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -42,7 +43,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     super.dispose();
   }
 
-  void _submit() {
+  void _submit() async {
     final loc = AppLocalizations(AppLanguage.fromCode(_selectedLang));
     if (!_consentAgreed) {
       ScaffoldMessenger.of(
@@ -52,53 +53,184 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     }
 
     if (_formKey.currentState?.validate() ?? false) {
+      setState(() => _isSubmitting = true);
+
       final isTeacher = _selectedRole == UserRole.teacher;
       final generatedCode = 'TCH-${(DateTime.now().millisecondsSinceEpoch % 9000 + 1000)}-KZ';
 
+      final name = _nameController.text.trim();
+      final email = _emailController.text.trim();
+      final password = _passwordController.text;
+      final school = _schoolController.text.trim().isEmpty
+          ? 'Общеобразовательная школа'
+          : _schoolController.text.trim();
+      final city = _cityController.text.trim().isEmpty
+          ? 'г. Астана'
+          : _cityController.text.trim();
+      final subject = _subjectController.text.trim().isEmpty
+          ? 'Общие дисциплины'
+          : _subjectController.text.trim();
+
       if (isTeacher) {
-        // Register in admin approval queue
-        ref.read(adminApplicationsProvider.notifier).submitNewApplication(
-          fullName: _nameController.text.trim(),
-          email: _emailController.text.trim(),
-          school: _schoolController.text.trim().isEmpty ? 'Общеобразовательная школа' : _schoolController.text.trim(),
-          city: _cityController.text.trim().isEmpty ? 'г. Астана' : _cityController.text.trim(),
-          subject: _subjectController.text.trim().isEmpty ? 'Общие дисциплины' : _subjectController.text.trim(),
+        // 1. Register in admin approval queue
+        await ref.read(adminApplicationsProvider.notifier).submitNewApplication(
+          fullName: name,
+          email: email,
+          school: school,
+          city: city,
+          subject: subject,
           teacherCode: generatedCode,
         );
+
+        // 2. Add to all registered users registry for admin visibility
+        final newRegisteredUser = UserModel(
+          id: 'user-${DateTime.now().millisecondsSinceEpoch}',
+          name: name,
+          email: email,
+          role: _selectedRole,
+          language: _selectedLang,
+          school: school,
+          city: city,
+          subject: subject,
+          teacherCode: generatedCode,
+          isTeacherVerified: false,
+          teacherStatus: 'pending',
+          createdAt: DateTime.now(),
+        );
+        await ref.read(registeredUsersProvider.notifier).addUser(newRegisteredUser);
+
+        setState(() => _isSubmitting = false);
+
+        if (!mounted) return;
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Row(
+              children: [
+                Icon(Icons.verified_user_rounded, color: AppColors.teacherAccent, size: 28),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Заявка на аккредитацию создана!',
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Учитель $name зарегистрирован в системе.',
+                  style: const TextStyle(fontSize: 13),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.teacherAccent.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.teacherAccent.withOpacity(0.3)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Код учителя:', style: TextStyle(fontSize: 11, color: AppColors.secondaryTextLight)),
+                          Text(generatedCode, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.teacherAccent)),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Статус аккредитации:', style: TextStyle(fontSize: 11, color: AppColors.secondaryTextLight)),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.warning.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text('⏳ На рассмотрении', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.warning)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text('Школа: $school, $city', style: const TextStyle(fontSize: 11)),
+                      Text('Предмет: $subject', style: const TextStyle(fontSize: 11)),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+                const Text(
+                  'Заявка ожидает одобрения в Панели Администратора. Вы можете перейти в админку прямо сейчас и утвердить её в 1 клик:',
+                  style: TextStyle(fontSize: 12, color: AppColors.secondaryTextLight),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  context.go('/login');
+                },
+                child: const Text('На страницу входа'),
+              ),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryDark,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                onPressed: () async {
+                  final router = GoRouter.of(context);
+                  Navigator.pop(ctx);
+                  // Quick login as Administrator to immediately see and approve the application
+                  await ref.read(authNotifierProvider.notifier).login(
+                    email: 'admin@edumind.kz',
+                    password: 'admin2026',
+                  );
+                  if (mounted) {
+                    router.go('/admin');
+                  }
+                },
+                icon: const Icon(Icons.admin_panel_settings_rounded, size: 18),
+                label: const Text('Открыть в Админ-панели'),
+              ),
+            ],
+          ),
+        );
+      } else {
+        // Students / Learners registration
+        final newStudentUser = UserModel(
+          id: 'user-${DateTime.now().millisecondsSinceEpoch}',
+          name: name,
+          email: email,
+          role: _selectedRole,
+          language: _selectedLang,
+          school: school,
+          city: city,
+          isTeacherVerified: true,
+          teacherStatus: 'approved',
+          createdAt: DateTime.now(),
+        );
+        await ref.read(registeredUsersProvider.notifier).addUser(newStudentUser);
+
+        ref
+            .read(authNotifierProvider.notifier)
+            .register(
+              name: name,
+              email: email,
+              password: password,
+              role: _selectedRole,
+              language: _selectedLang,
+            );
       }
-
-      // Add to all registered users registry for admin visibility
-      final newRegisteredUser = UserModel(
-        id: 'user-${DateTime.now().millisecondsSinceEpoch}',
-        name: _nameController.text.trim(),
-        email: _emailController.text.trim(),
-        role: _selectedRole,
-        language: _selectedLang,
-        school: _schoolController.text.trim().isNotEmpty
-            ? _schoolController.text.trim()
-            : (_selectedRole == UserRole.teacher ? 'Общеобразовательная школа' : 'Лицей №1'),
-        city: _cityController.text.trim().isNotEmpty ? _cityController.text.trim() : 'г. Астана',
-        subject: isTeacher ? _subjectController.text.trim() : null,
-        teacherCode: isTeacher ? generatedCode : null,
-        isTeacherVerified: !isTeacher,
-        teacherStatus: isTeacher ? 'pending' : 'approved',
-        createdAt: DateTime.now(),
-      );
-      ref.read(registeredUsersProvider.notifier).addUser(newRegisteredUser);
-
-      ref
-          .read(authNotifierProvider.notifier)
-          .register(
-            name: _nameController.text,
-            email: _emailController.text,
-            password: _passwordController.text,
-            role: _selectedRole,
-            language: _selectedLang,
-            school: isTeacher ? _schoolController.text.trim() : null,
-            city: isTeacher ? _cityController.text.trim() : null,
-            subject: isTeacher ? _subjectController.text.trim() : null,
-            teacherCode: isTeacher ? generatedCode : null,
-          );
     }
   }
 
@@ -341,7 +473,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   text: _selectedRole == UserRole.teacher
                       ? 'Отправить заявку на аккредитацию'
                       : loc.tr('create_account'),
-                  isLoading: authState.isLoading,
+                  isLoading: authState.isLoading || _isSubmitting,
                   onPressed: _submit,
                 ),
                 const SizedBox(height: 16),

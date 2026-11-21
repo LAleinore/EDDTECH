@@ -22,6 +22,17 @@ class _AdminScreenState extends ConsumerState<AdminScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) {
+        ref.read(adminApplicationsProvider.notifier).reload();
+        ref.read(registeredUsersProvider.notifier).reload();
+      }
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(adminApplicationsProvider.notifier).reload();
+      ref.read(registeredUsersProvider.notifier).reload();
+    });
   }
 
   @override
@@ -135,13 +146,18 @@ class _AdminScreenState extends ConsumerState<AdminScreen>
           IconButton(
             tooltip: 'Обновить реестр',
             icon: const Icon(Icons.refresh_rounded),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Реестр аккредитаций и пользователей синхронизирован'),
-                  duration: Duration(seconds: 1),
-                ),
-              );
+            onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
+              await ref.read(adminApplicationsProvider.notifier).reload();
+              await ref.read(registeredUsersProvider.notifier).reload();
+              if (mounted) {
+                messenger.showSnackBar(
+                  const SnackBar(
+                    content: Text('Реестр аккредитаций и пользователей синхронизирован с базой'),
+                    duration: Duration(seconds: 1),
+                  ),
+                );
+              }
             },
           ),
         ],
@@ -346,13 +362,40 @@ class _AdminScreenState extends ConsumerState<AdminScreen>
       );
     }
 
-    return ListView.separated(
+    return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: filtered.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      itemCount: filtered.length + (isPending ? 1 : 0),
       itemBuilder: (context, index) {
-        final app = filtered[index];
-        return _buildApplicationCard(app, isPending: isPending);
+        if (isPending && index == 0) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.warning.withOpacity(0.35)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline_rounded, color: AppColors.warning, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'В очереди модерации: ${filtered.length} заявок. Новые регистрации учителей отображаются здесь автоматически.',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+        final app = isPending ? filtered[index - 1] : filtered[index];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _buildApplicationCard(app, isPending: isPending),
+        );
       },
     );
   }

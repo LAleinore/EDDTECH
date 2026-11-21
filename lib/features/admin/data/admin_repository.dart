@@ -90,12 +90,20 @@ class AdminApplicationsNotifier
     ),
   ];
 
-  void _persist() {
-    final encoded = json.encode(state.map((a) => a.toMap()).toList());
-    _prefs.setString(_storageKey, encoded);
+  Future<void> reload() async {
+    try {
+      await _prefs.reload();
+      final reloaded = _loadInitial(_prefs);
+      state = reloaded;
+    } catch (_) {}
   }
 
-  void approve(String id) {
+  Future<void> _persist() async {
+    final encoded = json.encode(state.map((a) => a.toMap()).toList());
+    await _prefs.setString(_storageKey, encoded);
+  }
+
+  Future<void> approve(String id) async {
     TeacherApplication? approvedApp;
 
     state = [
@@ -112,16 +120,16 @@ class AdminApplicationsNotifier
         ] else
           app,
     ];
-    _persist();
+    await _persist();
 
     if (approvedApp != null) {
-      _ref
+      await _ref
           .read(registeredUsersProvider.notifier)
           .updateUserVerification(approvedApp!.email, true, 'approved');
     }
   }
 
-  void reject(String id, String reason) {
+  Future<void> reject(String id, String reason) async {
     TeacherApplication? rejectedApp;
 
     state = [
@@ -139,49 +147,51 @@ class AdminApplicationsNotifier
         ] else
           app,
     ];
-    _persist();
+    await _persist();
 
     if (rejectedApp != null) {
-      _ref
+      await _ref
           .read(registeredUsersProvider.notifier)
           .updateUserVerification(rejectedApp!.email, false, 'rejected', reason);
     }
   }
 
-  void submitNewApplication({
+  Future<void> submitNewApplication({
     required String fullName,
     required String email,
     required String school,
     required String city,
     required String subject,
     required String teacherCode,
-  }) {
-    // Avoid duplicate application for same email
+  }) async {
+    try {
+      await _prefs.reload();
+    } catch (_) {}
+
+    final currentList = _loadInitial(_prefs);
     final cleanEmail = email.trim().toLowerCase();
-    final existingIndex = state.indexWhere(
-      (a) => a.email.toLowerCase() == cleanEmail,
-    );
+    final cleanCode = teacherCode.trim().toUpperCase();
 
     final newApp = TeacherApplication(
       id: 'app-${DateTime.now().millisecondsSinceEpoch}',
-      fullName: fullName,
-      email: email,
-      school: school,
-      city: city,
-      subject: subject,
-      teacherCode: teacherCode,
+      fullName: fullName.trim(),
+      email: email.trim(),
+      school: school.trim(),
+      city: city.trim(),
+      subject: subject.trim(),
+      teacherCode: cleanCode,
       status: ApplicationStatus.pending,
       appliedAt: DateTime.now(),
     );
 
-    if (existingIndex >= 0) {
-      final list = List<TeacherApplication>.from(state);
-      list[existingIndex] = newApp;
-      state = list;
-    } else {
-      state = [newApp, ...state];
-    }
-    _persist();
+    // Filter out previous app for this email or code
+    final filtered = currentList.where((a) =>
+      a.email.trim().toLowerCase() != cleanEmail &&
+      a.teacherCode.trim().toUpperCase() != cleanCode
+    ).toList();
+
+    state = [newApp, ...filtered];
+    await _persist();
   }
 
   bool isTeacherApproved(String emailOrCode) {
@@ -220,33 +230,38 @@ class RegisteredUsersNotifier extends StateNotifier<List<UserModel>> {
     ];
   }
 
-  void _persist() {
+  Future<void> reload() async {
+    try {
+      await _prefs.reload();
+      final loaded = _loadInitialUsers(_prefs);
+      state = loaded;
+    } catch (_) {}
+  }
+
+  Future<void> _persist() async {
     final encoded = json.encode(state.map((u) => u.toMap()).toList());
-    _prefs.setString(_usersStorageKey, encoded);
+    await _prefs.setString(_usersStorageKey, encoded);
   }
 
-  void addUser(UserModel user) {
+  Future<void> addUser(UserModel user) async {
+    try {
+      await _prefs.reload();
+    } catch (_) {}
+
+    final currentUsers = _loadInitialUsers(_prefs);
     final cleanEmail = user.email.trim().toLowerCase();
-    final existingIndex = state.indexWhere(
-      (u) => u.email.trim().toLowerCase() == cleanEmail,
-    );
+    final filtered = currentUsers.where((u) => u.email.trim().toLowerCase() != cleanEmail).toList();
 
-    if (existingIndex >= 0) {
-      final list = List<UserModel>.from(state);
-      list[existingIndex] = user;
-      state = list;
-    } else {
-      state = [user, ...state];
-    }
-    _persist();
+    state = [user, ...filtered];
+    await _persist();
   }
 
-  void updateUserVerification(
+  Future<void> updateUserVerification(
     String emailOrCode,
     bool isVerified,
     String status, [
     String? reason,
-  ]) {
+  ]) async {
     final clean = emailOrCode.trim().toLowerCase();
     state = [
       for (final u in state)
@@ -259,6 +274,6 @@ class RegisteredUsersNotifier extends StateNotifier<List<UserModel>> {
         else
           u,
     ];
-    _persist();
+    await _persist();
   }
 }
