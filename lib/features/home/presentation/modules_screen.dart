@@ -14,8 +14,9 @@ class ModulesScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authNotifierProvider).user;
     final loc = AppLocalizations(AppLanguage.fromCode(user?.language ?? 'ru'));
-    final isAdmin = user?.role == UserRole.admin;
-    final isTeacher = user?.role == UserRole.teacher || isAdmin;
+    final role = user?.role ?? UserRole.student;
+    final isAdmin = role == UserRole.admin;
+    final isTeacher = role == UserRole.teacher;
 
     return Scaffold(
       appBar: AppBar(title: Text(loc.tr('nav_modules'))),
@@ -23,34 +24,36 @@ class ModulesScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            // 1. Learning Hub
-            _ModuleCategoryCard(
-              title: 'Интерактивное Обучение',
-              subtitle: 'Учебные курсы, практика и тесты',
-              description: 'Учебная программа по математике, физике, программированию и языкам с автоматической проверкой.',
-              icon: Icons.menu_book_rounded,
-              color: AppColors.primary,
-              actions: [
-                _ActionItem(
-                  'Каталог курсов',
-                  Icons.auto_stories_rounded,
-                  () => context.push('/learning'),
-                ),
-                _ActionItem(
-                  'Тренажер тестов',
-                  Icons.assignment_turned_in_rounded,
-                  () => context.push('/learning'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            // 2. Daryn Ustaz (Teacher Portal - Teachers & Admin only)
-            if (isTeacher) ...[
+            // 1. ADMIN ONLY: Only Admin Panel
+            if (isAdmin) ...[
+              _ModuleCategoryCard(
+                title: 'Панель Администратора',
+                subtitle: 'Модерация и управление платформой',
+                description: 'Проверка преподавательского состава, утверждение заявок аккредитации, реестр всех пользователей и аналитика.',
+                icon: Icons.admin_panel_settings_rounded,
+                color: AppColors.primaryDark,
+                actions: [
+                  _ActionItem(
+                    'Модерация заявок учителей',
+                    Icons.how_to_reg_rounded,
+                    () => context.push('/admin'),
+                  ),
+                  _ActionItem(
+                    'Реестр пользователей и школ',
+                    Icons.people_alt_rounded,
+                    () => context.push('/admin'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+            ]
+            // 2. TEACHER ONLY: Only Daryn Ustaz and Дневник и поддержка
+            else if (isTeacher) ...[
+              // Daryn Ustaz
               _ModuleCategoryCard(
                 title: loc.tr('module_teacher_title'),
                 subtitle: 'Платформа верифицированных учителей',
-                description: 'Аккредитованная рабочая среда преподавателя: генерация ҚМЖ, БЖБ/ТЖБ и адаптация тем.',
+                description: 'Аккредитованная рабочая среда преподавателя: генерация ҚМЖ, конструктор БЖБ/ТЖБ и адаптация тем.',
                 icon: Icons.school_rounded,
                 color: AppColors.teacherAccent,
                 actions: [
@@ -75,90 +78,114 @@ class ModulesScreen extends ConsumerWidget {
                     () => context.push('/teacher/explain'),
                   ),
                   _ActionItem(
-                    'Архив материалов',
+                    'История материалов',
                     Icons.history,
                     () => context.push('/teacher/history'),
                   ),
                 ],
               ),
               const SizedBox(height: 20),
+
+              // Дневник и поддержка
+              _ModuleCategoryCard(
+                title: 'Дневник и Поддержка',
+                subtitle: 'Кураторство подопечных и обратная связь',
+                description: 'Просмотр анонимных обращений учеников, ответы и мониторинг успеваемости учащихся.',
+                icon: Icons.spa_rounded,
+                color: AppColors.mindcareAccent,
+                actions: [
+                  _ActionItem(
+                    'Анонимные обращения учеников',
+                    Icons.shield_outlined,
+                    () => context.push('/teacher/portal'),
+                  ),
+                  _ActionItem(
+                    'Дневник настроения и чекины',
+                    Icons.mood,
+                    () => context.push('/mindcare/mood'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+            ]
+            // 3. STUDENTS & LEARNERS: Learning Hub, Дневник и поддержка, Inclusive AI (NO Daryn Ustaz, NO Admin Panel)
+            else ...[
+              // Learning Hub
+              _ModuleCategoryCard(
+                title: 'Интерактивное Обучение',
+                subtitle: 'Учебные курсы, практика и тесты',
+                description: 'Учебная программа по математике, физике, программированию и языкам с автоматической проверкой.',
+                icon: Icons.menu_book_rounded,
+                color: AppColors.primary,
+                actions: [
+                  _ActionItem(
+                    'Каталог курсов',
+                    Icons.auto_stories_rounded,
+                    () => context.push('/learning'),
+                  ),
+                  _ActionItem(
+                    'Тренажер тестов',
+                    Icons.assignment_turned_in_rounded,
+                    () => context.push('/learning'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // Дневник и поддержка
+              _ModuleCategoryCard(
+                title: 'Дневник и Поддержка',
+                subtitle: 'Личные записи и анонимный чат с учителями',
+                description: 'Приватный дневник для фиксации мыслей и тревог, а также безопасный анонимный канал связи с учителями.',
+                icon: Icons.spa_rounded,
+                color: AppColors.mindcareAccent,
+                actions: [
+                  _ActionItem(
+                    'Личный дневник мыслей',
+                    Icons.auto_stories_rounded,
+                    () => context.push('/mindcare/diary'),
+                  ),
+                  _ActionItem(
+                    'Анонимный чат с учителем',
+                    Icons.shield_outlined,
+                    () => context.push('/mindcare/anonymous-chat'),
+                  ),
+                  _ActionItem(
+                    'Дневник настроения',
+                    Icons.mood,
+                    () => context.push('/mindcare/mood'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // Inclusive AI
+              _ModuleCategoryCard(
+                title: loc.tr('module_inclusive_title'),
+                subtitle: loc.tr('module_inclusive_sub'),
+                description: loc.tr('module_inclusive_desc'),
+                icon: Icons.accessibility_new_rounded,
+                color: AppColors.inclusiveAccent,
+                actions: [
+                  _ActionItem(
+                    'AI Simplifier (Упрощение)',
+                    Icons.auto_stories,
+                    () => context.push('/inclusive/simplifier'),
+                  ),
+                  _ActionItem(
+                    'Голосовой ввод (STT)',
+                    Icons.mic,
+                    () => context.push('/inclusive/voice'),
+                  ),
+                  _ActionItem(
+                    'Специальные возможности',
+                    Icons.tune,
+                    () => context.push('/inclusive/accessibility'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
             ],
-
-            // 3. MindCare
-            _ModuleCategoryCard(
-              title: 'Дневник и Поддержка',
-              subtitle: 'Личные записи и анонимный чат с учителями',
-              description: 'Приватный дневник для фиксации мыслей и тревог, а также безопасный анонимный канал связи с учителями.',
-              icon: Icons.spa_rounded,
-              color: AppColors.mindcareAccent,
-              actions: [
-                _ActionItem(
-                  'Личный дневник мыслей',
-                  Icons.auto_stories_rounded,
-                  () => context.push('/mindcare/diary'),
-                ),
-                _ActionItem(
-                  'Анонимный чат с учителем',
-                  Icons.shield_outlined,
-                  () => context.push('/mindcare/anonymous-chat'),
-                ),
-                _ActionItem(
-                  'Дневник настроения',
-                  Icons.mood,
-                  () => context.push('/mindcare/mood'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            // 4. Inclusive AI
-            _ModuleCategoryCard(
-              title: loc.tr('module_inclusive_title'),
-              subtitle: loc.tr('module_inclusive_sub'),
-              description: loc.tr('module_inclusive_desc'),
-              icon: Icons.accessibility_new_rounded,
-              color: AppColors.inclusiveAccent,
-              actions: [
-                _ActionItem(
-                  'AI Simplifier (Упрощение)',
-                  Icons.auto_stories,
-                  () => context.push('/inclusive/simplifier'),
-                ),
-                _ActionItem(
-                  'Голосовой ввод (STT)',
-                  Icons.mic,
-                  () => context.push('/inclusive/voice'),
-                ),
-                _ActionItem(
-                  'Специальные возможности',
-                  Icons.tune,
-                  () => context.push('/inclusive/accessibility'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            // 5. Admin Panel
-            _ModuleCategoryCard(
-              title: 'Панель Администратора',
-              subtitle: 'Модерация и аккредитация школ',
-              description: 'Проверка преподавательского состава, утверждение заявок и аналитика системы.',
-              icon: Icons.admin_panel_settings_rounded,
-              color: AppColors.primaryDark,
-              actions: [
-                _ActionItem(
-                  'Модерация заявок учителей',
-                  Icons.how_to_reg_rounded,
-                  () => context.push('/admin'),
-                ),
-                _ActionItem(
-                  'Реестр подтвержденных школ',
-                  Icons.apartment_rounded,
-                  () => context.push('/admin'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
           ],
         ),
       ),

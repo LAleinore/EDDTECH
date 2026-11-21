@@ -350,7 +350,7 @@ class HomeDashboardScreen extends ConsumerWidget {
               const SizedBox(height: 12),
 
               if (role == UserRole.admin) ...[
-                // Admin Modules (No student clutter)
+                // Admin Modules (ONLY Admin Panel)
                 _ModuleNavCard(
                   title: 'Панель Модерации',
                   subtitle: 'Заявки учителей на верификацию',
@@ -371,46 +371,41 @@ class HomeDashboardScreen extends ConsumerWidget {
                   badgeText: 'Пользователи',
                   onTap: () => context.push('/admin'),
                 ),
+              ] else if (role == UserRole.teacher) ...[
+                // Teacher Modules (ONLY Daryn Ustaz + Дневник и поддержка)
+                _ModuleNavCard(
+                  title: loc.tr('module_teacher_title'),
+                  subtitle: 'Платформа верифицированных учителей',
+                  description: 'Поурочные планы ҚМЖ, конструктор тестов БЖБ/ТЖБ и проверка школ.',
+                  icon: Icons.school_rounded,
+                  color: AppColors.teacherAccent,
+                  badgeText: 'Преподавателям',
+                  onTap: () => context.push('/teacher/portal'),
+                ),
                 const SizedBox(height: 12),
 
                 _ModuleNavCard(
-                  title: 'Daryn Ustaz (Аудит)',
-                  subtitle: 'Методические материалы педагогов',
-                  description: 'Просмотр сгенерированных поурочных планов ҚМЖ и тестов БЖБ/ТЖБ.',
-                  icon: Icons.school_rounded,
-                  color: AppColors.teacherAccent,
-                  badgeText: 'Учителям',
+                  title: 'Личный дневник и Поддержка',
+                  subtitle: 'Кураторство подопечных и анонимные обращения',
+                  description: 'Ответы на анонимные обращения учеников, мониторинг успеваемости и поддержка.',
+                  icon: Icons.auto_stories_rounded,
+                  color: AppColors.mindcareAccent,
+                  badgeText: 'Дневник & Чат',
                   onTap: () => context.push('/teacher/portal'),
                 ),
               ] else ...[
-                // Student & Teacher Standard Modules
-                if (role == UserRole.student) ...[
-                  _ModuleNavCard(
-                    title: 'Интерактивное Обучение',
-                    subtitle: 'Учебные курсы и тренажеры знаний',
-                    description: 'Алгебра, Python, Физика и Английский язык с практическими заданиями и AI Тьютором.',
-                    icon: Icons.menu_book_rounded,
-                    color: AppColors.primary,
-                    badgeText: 'Обучение & Тесты',
-                    onTap: () => context.push('/learning'),
-                  ),
-                  const SizedBox(height: 12),
-                ],
+                // Student & Learner Modules (ONLY Learning Hub, MindCare, Inclusive AI. NO Daryn Ustaz, NO Admin Panel)
+                _ModuleNavCard(
+                  title: 'Интерактивное Обучение',
+                  subtitle: 'Учебные курсы и тренажеры знаний',
+                  description: 'Алгебра, Python, Физика и Английский язык с практическими заданиями и AI Тьютором.',
+                  icon: Icons.menu_book_rounded,
+                  color: AppColors.primary,
+                  badgeText: 'Обучение & Тесты',
+                  onTap: () => context.push('/learning'),
+                ),
+                const SizedBox(height: 12),
 
-                if (role == UserRole.teacher) ...[
-                  _ModuleNavCard(
-                    title: loc.tr('module_teacher_title'),
-                    subtitle: 'Платформа верифицированных учителей',
-                    description: 'Поурочные планы ҚМЖ, конструктор тестов БЖБ/ТЖБ и проверка школ.',
-                    icon: Icons.school_rounded,
-                    color: AppColors.teacherAccent,
-                    badgeText: 'Преподавателям',
-                    onTap: () => context.push('/teacher/portal'),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-
-                // MindCare Card
                 _ModuleNavCard(
                   title: 'Личный дневник и Поддержка',
                   subtitle: 'Приватные записи и анонимный чат с учителем',
@@ -422,7 +417,6 @@ class HomeDashboardScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
 
-                // Inclusive AI Card
                 _ModuleNavCard(
                   title: loc.tr('module_inclusive_title'),
                   subtitle: loc.tr('module_inclusive_sub'),
