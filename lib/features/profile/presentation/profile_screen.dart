@@ -86,7 +86,81 @@ class ProfileScreen extends ConsumerWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
+
+            // Gamification & Streak Stats Card
+            InkWell(
+              onTap: () => context.push('/achievements'),
+              borderRadius: BorderRadius.circular(16),
+              child: AppCard(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    Column(
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.local_fire_department_rounded, color: Color(0xFFE8590C), size: 20),
+                            SizedBox(width: 4),
+                            Text(
+                              '7 дней',
+                              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          'Стрик',
+                          style: TextStyle(fontSize: 12, color: AppColors.secondaryTextLight),
+                        ),
+                      ],
+                    ),
+                    Container(height: 32, width: 1, color: AppColors.dividerLight),
+                    Column(
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.bolt_rounded, color: AppColors.primary, size: 20),
+                            SizedBox(width: 4),
+                            Text(
+                              '1,450',
+                              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          'Очки XP',
+                          style: TextStyle(fontSize: 12, color: AppColors.secondaryTextLight),
+                        ),
+                      ],
+                    ),
+                    Container(height: 32, width: 1, color: AppColors.dividerLight),
+                    Column(
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.military_tech_rounded, color: AppColors.warning, size: 20),
+                            SizedBox(width: 4),
+                            Text(
+                              'Ур. 4',
+                              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          'Уровень',
+                          style: TextStyle(fontSize: 12, color: AppColors.secondaryTextLight),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
 
             // Language Selector Card
             AppCard(

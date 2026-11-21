@@ -18,6 +18,9 @@ import '../features/admin/presentation/admin_screen.dart';
 // Learning Hub Screen
 import '../features/learning/presentation/learning_hub_screen.dart';
 
+// Gamification Screen
+import '../features/gamification/presentation/achievements_screen.dart';
+
 // Teacher Screens
 import '../features/teacher/presentation/teacher_portal_screen.dart';
 import '../features/teacher/presentation/lesson_generator_screen.dart';
@@ -126,6 +129,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/notifications',
         builder: (context, state) => const NotificationsScreen(),
+      ),
+      GoRoute(
+        path: '/achievements',
+        builder: (context, state) => const AchievementsScreen(),
       ),
       // Teacher
       GoRoute(

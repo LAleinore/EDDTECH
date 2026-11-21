@@ -118,7 +118,82 @@ class HomeDashboardScreen extends ConsumerWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 14),
+
+              // Gamification Quick Bar (Streak & XP)
+              InkWell(
+                onTap: () => context.push('/achievements'),
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.dividerLight),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE8590C).withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.local_fire_department_rounded, color: Color(0xFFE8590C), size: 16),
+                            SizedBox(width: 4),
+                            Text(
+                              '7 дней стрик',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFFE8590C),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.bolt_rounded, color: AppColors.primary, size: 16),
+                            SizedBox(width: 4),
+                            Text(
+                              '1,450 XP',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Spacer(),
+                      const Text(
+                        'Награды',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      const SizedBox(width: 2),
+                      const Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.primary),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
 
               // Large Hero Card: EduMind AI
               Container(
@@ -473,6 +548,83 @@ class HomeDashboardScreen extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Streak Challenge Card
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Ударный режим и цель дня',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            ),
+            TextButton(
+              onPressed: () => context.push('/achievements'),
+              child: const Text(
+                'Все награды',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFFE8590C),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        AppCard(
+          padding: const EdgeInsets.all(16),
+          color: const Color(0xFFFFF4E6),
+          border: Border.all(color: const Color(0xFFFFD8A8)),
+          onTap: () => context.push('/achievements'),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFE8590C), Color(0xFFFFA94D)],
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.local_fire_department_rounded,
+                  color: Colors.white,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '7 дней непрерывного обучения!',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                        color: Color(0xFFD9480F),
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Решите 1 задачу сегодня, чтобы получить +50 XP и сохранить стрик 🔥',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF862E9C),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 16,
+                color: Color(0xFFD9480F),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 18),
+
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../core/widgets/cards.dart';
+import '../../gamification/data/gamification_repository.dart';
 
 class LearningHubScreen extends ConsumerStatefulWidget {
   const LearningHubScreen({super.key});
@@ -441,6 +442,9 @@ class _LearningHubScreenState extends ConsumerState<LearningHubScreen> {
                       setInnerState(() {
                         selectedOption = val;
                         isCorrect = val == 1;
+                        if (isCorrect == true) {
+                          ref.read(gamificationProvider.notifier).completeDailyLesson();
+                        }
                       });
                     },
                   ),
