@@ -124,7 +124,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Учитель $name зарегистрирован в системе.',
+                  'Уважаемый(ая) $name! Ваша анкета успешно принята и ожидает рассмотрения Комиссией Аккредитации.',
                   style: const TextStyle(fontSize: 13),
                 ),
                 const SizedBox(height: 12),
@@ -141,7 +141,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Код учителя:', style: TextStyle(fontSize: 11, color: AppColors.secondaryTextLight)),
+                          const Text('Код преподавателя:', style: TextStyle(fontSize: 11, color: AppColors.secondaryTextLight)),
                           Text(generatedCode, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.teacherAccent)),
                         ],
                       ),
@@ -168,39 +168,27 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 const SizedBox(height: 14),
                 const Text(
-                  'Заявка ожидает одобрения в Панели Администратора. Вы можете перейти в админку прямо сейчас и утвердить её в 1 клик:',
-                  style: TextStyle(fontSize: 12, color: AppColors.secondaryTextLight),
+                  'В целях безопасности доступ к инструментам Daryn Ustaz активируется после проверки администратором. Сохраните ваш Код преподавателя для входа.',
+                  style: TextStyle(fontSize: 12, color: AppColors.secondaryTextLight, height: 1.4),
                 ),
               ],
             ),
             actions: [
-              TextButton(
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.teacherAccent,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 44),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
                 onPressed: () {
                   Navigator.pop(ctx);
                   context.go('/login');
                 },
-                child: const Text('На страницу входа'),
-              ),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryDark,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                child: const Text(
+                  'Понятно, перейти на страницу входа',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                 ),
-                onPressed: () async {
-                  final router = GoRouter.of(context);
-                  Navigator.pop(ctx);
-                  // Quick login as Administrator to immediately see and approve the application
-                  await ref.read(authNotifierProvider.notifier).login(
-                    email: 'admin@edumind.kz',
-                    password: 'admin2026',
-                  );
-                  if (mounted) {
-                    router.go('/admin');
-                  }
-                },
-                icon: const Icon(Icons.admin_panel_settings_rounded, size: 18),
-                label: const Text('Открыть в Админ-панели'),
               ),
             ],
           ),
