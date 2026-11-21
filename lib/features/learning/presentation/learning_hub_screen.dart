@@ -164,7 +164,7 @@ class _LearningHubScreenState extends ConsumerState<LearningHubScreen> {
                       labelStyle: TextStyle(
                         fontSize: 13,
                         fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                        color: isSelected ? Colors.white : AppColors.primaryTextLight,
+                        color: isSelected ? Colors.white : AppColors.textLight,
                       ),
                       selectedColor: AppColors.primary,
                       backgroundColor: Theme.of(context).cardColor,

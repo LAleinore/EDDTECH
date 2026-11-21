@@ -4,6 +4,7 @@ import '../../app/theme/app_colors.dart';
 class AppCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
+  final EdgeInsetsGeometry? margin;
   final VoidCallback? onTap;
   final Color? color;
   final Border? border;
@@ -12,6 +13,7 @@ class AppCard extends StatelessWidget {
     super.key,
     required this.child,
     this.padding = const EdgeInsets.all(20),
+    this.margin,
     this.onTap,
     this.color,
     this.border,
@@ -24,6 +26,7 @@ class AppCard extends StatelessWidget {
         color ?? (isDark ? AppColors.surfaceDark : AppColors.surfaceLight);
 
     return Container(
+      margin: margin,
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(20),

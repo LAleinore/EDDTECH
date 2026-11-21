@@ -255,13 +255,25 @@ class AuthRepository {
       );
 
       final data = response.data;
-      final token = data['token'] ?? data['access_token'];
+      if (data['token'] != null) {
+        await _storageService.saveAuthToken(data['token'].toString());
+      }
       final user = UserModel.fromMap(data['user']);
       return _persistUser(user);
     } catch (_) {
       // Local persistent registration
       return _persistUser(newUser);
     }
+  }
+
+  Future<void> sendPasswordRecovery(String email) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    try {
+      await _apiClient.dio.post(
+        '/auth/forgot-password',
+        data: {'email': email.trim()},
+      );
+    } catch (_) {}
   }
 
   Future<void> logout() async {
@@ -370,5 +382,42 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> updateUser(UserModel user) async {
     state = state.copyWith(user: user);
+  }
+
+  Future<void> updateProfile({
+    String? name,
+    String? avatarUrl,
+    String? language,
+    UserAccessibilitySettings? accessibility,
+  }) async {
+    final current = state.user;
+    if (current == null) return;
+    final updated = await _repo.updateProfile(
+      currentUser: current,
+      name: name,
+      avatarUrl: avatarUrl,
+      language: language,
+      accessibility: accessibility,
+    );
+    state = state.copyWith(user: updated);
+  }
+
+  Future<void> loginAsDemo(UserRole role) async {
+    UserModel demoUser;
+    switch (role) {
+      case UserRole.teacher:
+        demoUser = AuthRepository.teacherDemoUser;
+        break;
+      case UserRole.student:
+        demoUser = AuthRepository.studentDemoUser;
+        break;
+      case UserRole.learner:
+        demoUser = AuthRepository.learnerDemoUser;
+        break;
+      default:
+        demoUser = AuthRepository.studentDemoUser;
+    }
+    final user = await _repo._persistUser(demoUser);
+    state = state.copyWith(status: AuthStatus.authenticated, user: user);
   }
 }

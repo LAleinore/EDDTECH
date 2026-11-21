@@ -6,7 +6,6 @@ import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/theme_provider.dart';
 import '../../../core/widgets/buttons.dart';
 import '../../../core/widgets/cards.dart';
-import '../../../core/widgets/demo_badge.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../auth/domain/user_model.dart';
 
@@ -55,10 +54,6 @@ class ProfileScreen extends ConsumerWidget {
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      if (user?.isDemo == true) ...[
-                        const SizedBox(width: 8),
-                        const DemoBadge(compact: true),
-                      ],
                     ],
                   ),
                   const SizedBox(height: 4),
@@ -221,67 +216,6 @@ class ProfileScreen extends ConsumerWidget {
                         style: TextStyle(fontSize: 12),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
-
-            // Demo Mode Persona Switcher
-            AppCard(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const DemoBadge(compact: true),
-                      const SizedBox(width: 8),
-                      Text(
-                        loc.tr('demo_mode'),
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () =>
-                              authNotifier.loginAsDemo(UserRole.teacher),
-                          child: const Text(
-                            'Teacher',
-                            style: TextStyle(fontSize: 12),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () =>
-                              authNotifier.loginAsDemo(UserRole.student),
-                          child: const Text(
-                            'Student',
-                            style: TextStyle(fontSize: 12),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () =>
-                              authNotifier.loginAsDemo(UserRole.learner),
-                          child: const Text(
-                            'Learner',
-                            style: TextStyle(fontSize: 12),
-                          ),
-                        ),
-                      ),
-                    ],
                   ),
                 ],
               ),

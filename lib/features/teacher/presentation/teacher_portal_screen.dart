@@ -6,7 +6,6 @@ import '../../../core/widgets/cards.dart';
 import '../../admin/data/admin_repository.dart';
 import '../../admin/domain/teacher_application.dart';
 import '../../auth/data/auth_repository.dart';
-import '../../auth/domain/user_model.dart';
 
 class TeacherPortalScreen extends ConsumerStatefulWidget {
   const TeacherPortalScreen({super.key});
@@ -31,7 +30,6 @@ class _TeacherPortalScreenState extends ConsumerState<TeacherPortalScreen> {
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authNotifierProvider).user;
-    final isTeacher = user?.role == UserRole.teacher;
     final applications = ref.watch(adminApplicationsProvider);
 
     // Check if this teacher is approved in the accreditation registry
