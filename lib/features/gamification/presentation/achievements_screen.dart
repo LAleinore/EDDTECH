@@ -549,7 +549,9 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        student.name,
+                        student.isCurrentUser
+                            ? '${(currentUserName != null && currentUserName.isNotEmpty) ? currentUserName : student.name.replaceAll(" (Вы)", "")} (Вы)'
+                            : student.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(

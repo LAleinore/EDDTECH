@@ -68,9 +68,10 @@ class AuthRepository {
 
   static final UserModel studentDemoUser = UserModel(
     id: 'student-uuid-0002',
-    name: 'Алихан Нуртаев',
+    name: 'Учащийся',
     email: 'student@edumind.ai',
     role: UserRole.student,
+    school: 'Общеобразовательная школа',
     language: 'ru',
     createdAt: DateTime(2025, 10, 15),
     lastLoginAt: DateTime.now(),
@@ -151,12 +152,13 @@ class AuthRepository {
         throw 'Пароль должен содержать минимум 6 символов';
       }
 
+      final saved = await getSavedSession();
       if (cleanEmail == teacherDemoUser.email) {
-        return _persistUser(teacherDemoUser);
+        return _persistUser(saved?.email == cleanEmail ? saved! : teacherDemoUser);
       } else if (cleanEmail == studentDemoUser.email) {
-        return _persistUser(studentDemoUser);
+        return _persistUser(saved?.email == cleanEmail ? saved! : studentDemoUser);
       } else {
-        return _persistUser(learnerDemoUser);
+        return _persistUser(saved?.email == cleanEmail ? saved! : learnerDemoUser);
       }
     }
 
@@ -287,15 +289,19 @@ class AuthRepository {
   Future<UserModel> updateProfile({
     required UserModel currentUser,
     String? name,
+    String? school,
+    String? city,
     String? avatarUrl,
     String? language,
     UserAccessibilitySettings? accessibility,
   }) async {
     final updated = currentUser.copyWith(
-      name: name,
-      avatarUrl: avatarUrl,
-      language: language,
-      accessibility: accessibility,
+      name: (name != null && name.trim().isNotEmpty) ? name.trim() : currentUser.name,
+      school: school ?? currentUser.school,
+      city: city ?? currentUser.city,
+      avatarUrl: avatarUrl ?? currentUser.avatarUrl,
+      language: language ?? currentUser.language,
+      accessibility: accessibility ?? currentUser.accessibility,
     );
     await _storageService.saveUserJson(updated.toJson());
     if (language != null) {
@@ -386,6 +392,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> updateProfile({
     String? name,
+    String? school,
+    String? city,
     String? avatarUrl,
     String? language,
     UserAccessibilitySettings? accessibility,
@@ -395,6 +403,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
     final updated = await _repo.updateProfile(
       currentUser: current,
       name: name,
+      school: school,
+      city: city,
       avatarUrl: avatarUrl,
       language: language,
       accessibility: accessibility,

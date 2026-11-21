@@ -50,16 +50,34 @@ class ProfileScreen extends ConsumerWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        user?.name ?? 'Пользователь',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
+                      Flexible(
+                        child: Text(
+                          user?.name ?? 'Пользователь',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.edit_outlined, size: 18, color: AppColors.primary),
+                        tooltip: 'Изменить имя и данные',
+                        onPressed: () => _showEditProfileDialog(context, ref, user),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  if (user?.school != null && user!.school!.isNotEmpty) ...[
+                    Text(
+                      user.school!,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.secondaryTextLight,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                  ],
                   Text(
                     user?.email ?? '',
                     style: const TextStyle(
@@ -307,6 +325,75 @@ class ProfileScreen extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showEditProfileDialog(
+    BuildContext context,
+    WidgetRef ref,
+    UserModel? user,
+  ) {
+    final nameController = TextEditingController(text: user?.name ?? '');
+    final schoolController = TextEditingController(text: user?.school ?? '');
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          'Редактировать профиль',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameController,
+              decoration: InputDecoration(
+                labelText: 'Ваше имя и фамилия',
+                hintText: 'Введите ваше имя',
+                prefixIcon: const Icon(Icons.person_outline),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: schoolController,
+              decoration: InputDecoration(
+                labelText: 'Школа и класс',
+                hintText: 'Например: Школа №1, 10 класс',
+                prefixIcon: const Icon(Icons.school_outlined),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Отмена'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () {
+              final newName = nameController.text.trim();
+              final newSchool = schoolController.text.trim();
+              if (newName.isNotEmpty) {
+                ref.read(authNotifierProvider.notifier).updateProfile(
+                      name: newName,
+                      school: newSchool.isNotEmpty ? newSchool : null,
+                    );
+              }
+              Navigator.pop(ctx);
+            },
+            child: const Text('Сохранить'),
+          ),
+        ],
       ),
     );
   }
