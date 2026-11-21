@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -160,6 +161,38 @@ class AuthRepository {
       } else {
         return _persistUser(saved?.email == cleanEmail ? saved! : learnerDemoUser);
       }
+    }
+
+    // 4. Check locally registered users from admin registry
+    final regRaw = _storageService.prefs.getString('admin_registered_users_registry_v1');
+    if (regRaw != null && regRaw.isNotEmpty) {
+      try {
+        final decoded = json.decode(regRaw) as List;
+        for (final item in decoded) {
+          final u = UserModel.fromMap(Map<String, dynamic>.from(item));
+          if (u.email.toLowerCase() == cleanEmail ||
+              (u.teacherCode != null && u.teacherCode!.toLowerCase() == cleanEmail)) {
+            // Check if admin approved this teacher in applications registry!
+            final appRaw = _storageService.prefs.getString('admin_teacher_applications_v2');
+            var isApproved = u.isTeacherVerified;
+            if (appRaw != null) {
+              final appDecoded = json.decode(appRaw) as List;
+              for (final a in appDecoded) {
+                if ((a['email']?.toString().toLowerCase() == u.email.toLowerCase() ||
+                        a['teacherCode']?.toString().toLowerCase() ==
+                            u.teacherCode?.toLowerCase()) &&
+                    a['status'] == 'approved') {
+                  isApproved = true;
+                }
+              }
+            }
+            return _persistUser(u.copyWith(
+              isTeacherVerified: isApproved,
+              teacherStatus: isApproved ? 'approved' : u.teacherStatus,
+            ));
+          }
+        }
+      } catch (_) {}
     }
 
     try {

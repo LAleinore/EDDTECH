@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../core/widgets/cards.dart';
+import '../../auth/domain/user_model.dart';
 import '../data/admin_repository.dart';
 import '../domain/teacher_application.dart';
 
@@ -20,7 +21,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -94,6 +95,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen>
   @override
   Widget build(BuildContext context) {
     final applications = ref.watch(adminApplicationsProvider);
+    final registeredUsers = ref.watch(registeredUsersProvider);
 
     final pending = applications
         .where((a) => a.status == ApplicationStatus.pending)
@@ -105,6 +107,15 @@ class _AdminScreenState extends ConsumerState<AdminScreen>
         .where((a) => a.status == ApplicationStatus.rejected)
         .toList();
 
+    // Calculate unique schools count
+    final schools = <String>{};
+    for (final a in applications) {
+      if (a.school.isNotEmpty) schools.add(a.school);
+    }
+    for (final u in registeredUsers) {
+      if (u.school != null && u.school!.isNotEmpty) schools.add(u.school!);
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Column(
@@ -115,7 +126,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen>
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
             ),
             Text(
-              'Модерация и верификация школ и преподавателей',
+              'Модерация школ, верификация учителей и реестр пользователей',
               style: TextStyle(fontSize: 11, color: AppColors.secondaryTextLight),
             ),
           ],
@@ -127,7 +138,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen>
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Реестр аккредитаций обновлен'),
+                  content: Text('Реестр аккредитаций и пользователей синхронизирован'),
                   duration: Duration(seconds: 1),
                 ),
               );
@@ -136,13 +147,14 @@ class _AdminScreenState extends ConsumerState<AdminScreen>
         ],
         bottom: TabBar(
           controller: _tabController,
+          isScrollable: true,
           labelColor: AppColors.primary,
           unselectedLabelColor: AppColors.secondaryTextLight,
           indicatorColor: AppColors.primary,
           tabs: [
             Tab(
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   const Text('Заявки'),
                   if (pending.isNotEmpty) ...[
@@ -164,6 +176,26 @@ class _AdminScreenState extends ConsumerState<AdminScreen>
             ),
             Tab(text: 'Верифицированы (${approved.length})'),
             Tab(text: 'Отклоненные (${rejected.length})'),
+            Tab(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Все пользователи'),
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '${registeredUsers.length}',
+                      style: const TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -171,7 +203,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen>
         children: [
           // Metrics Header
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             color: Theme.of(context).cardColor,
             child: Row(
               children: [
@@ -181,17 +213,24 @@ class _AdminScreenState extends ConsumerState<AdminScreen>
                   icon: Icons.hourglass_top_rounded,
                   color: AppColors.warning,
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 _buildMetricCard(
                   title: 'Одобрено',
                   count: '${approved.length}',
                   icon: Icons.verified_user_rounded,
                   color: AppColors.success,
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
+                _buildMetricCard(
+                  title: 'Пользователи',
+                  count: '${registeredUsers.length}',
+                  icon: Icons.people_alt_rounded,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(width: 8),
                 _buildMetricCard(
                   title: 'Школ в базе',
-                  count: '14',
+                  count: '${schools.length}',
                   icon: Icons.apartment_rounded,
                   color: AppColors.primaryDark,
                 ),
@@ -206,7 +245,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen>
             child: TextField(
               onChanged: (val) => setState(() => _searchQuery = val.toLowerCase()),
               decoration: InputDecoration(
-                hintText: 'Поиск по ФИО, школе, коду TCH...',
+                hintText: 'Поиск по ФИО, email, школе, роли или коду TCH...',
                 prefixIcon: const Icon(Icons.search, size: 20),
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
@@ -223,6 +262,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen>
                 _buildList(pending, isPending: true),
                 _buildList(approved, isPending: false),
                 _buildList(rejected, isPending: false),
+                _buildUsersList(registeredUsers),
               ],
             ),
           ),
@@ -239,7 +279,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen>
   }) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
         decoration: BoxDecoration(
           color: color.withOpacity(0.08),
           borderRadius: BorderRadius.circular(12),
@@ -247,20 +287,22 @@ class _AdminScreenState extends ConsumerState<AdminScreen>
         ),
         child: Column(
           children: [
-            Icon(icon, color: color, size: 20),
-            const SizedBox(height: 4),
+            Icon(icon, color: color, size: 18),
+            const SizedBox(height: 2),
             Text(
               count,
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 16,
                 fontWeight: FontWeight.w800,
                 color: color,
               ),
             ),
             Text(
               title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(
-                fontSize: 10,
+                fontSize: 9,
                 color: AppColors.secondaryTextLight,
                 fontWeight: FontWeight.w600,
               ),
@@ -277,7 +319,9 @@ class _AdminScreenState extends ConsumerState<AdminScreen>
       return a.fullName.toLowerCase().contains(_searchQuery) ||
           a.school.toLowerCase().contains(_searchQuery) ||
           a.city.toLowerCase().contains(_searchQuery) ||
-          a.teacherCode.toLowerCase().contains(_searchQuery);
+          a.email.toLowerCase().contains(_searchQuery) ||
+          a.teacherCode.toLowerCase().contains(_searchQuery) ||
+          a.subject.toLowerCase().contains(_searchQuery);
     }).toList();
 
     if (filtered.isEmpty) {
@@ -285,44 +329,56 @@ class _AdminScreenState extends ConsumerState<AdminScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.inbox_outlined, size: 48, color: Colors.grey.shade400),
-            const SizedBox(height: 8),
-            const Text(
-              'Заявок в этой категории нет',
-              style: TextStyle(color: AppColors.secondaryTextLight, fontSize: 14),
+            Icon(
+              isPending ? Icons.task_alt_rounded : Icons.search_off_rounded,
+              size: 48,
+              color: AppColors.secondaryTextLight.withOpacity(0.5),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              isPending
+                  ? 'Все заявки учителей рассмотрены!'
+                  : 'Записей в данном разделе не найдено',
+              style: const TextStyle(color: AppColors.secondaryTextLight, fontSize: 13),
             ),
           ],
         ),
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    return ListView.separated(
+      padding: const EdgeInsets.all(16),
       itemCount: filtered.length,
-      itemBuilder: (ctx, i) {
-        final app = filtered[i];
-        return _buildTeacherCard(app, isPending);
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        final app = filtered[index];
+        return _buildApplicationCard(app, isPending: isPending);
       },
     );
   }
 
-  Widget _buildTeacherCard(TeacherApplication app, bool isPending) {
+  Widget _buildApplicationCard(TeacherApplication app, {required bool isPending}) {
     Color statusColor;
+    String statusText;
+
     switch (app.status) {
       case ApplicationStatus.approved:
         statusColor = AppColors.success;
+        statusText = 'Верифицирован';
         break;
       case ApplicationStatus.rejected:
         statusColor = AppColors.error;
+        statusText = 'Отклонен';
         break;
       case ApplicationStatus.pending:
         statusColor = AppColors.warning;
+        statusText = 'На рассмотрении';
         break;
     }
 
     return AppCard(
-      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
+      border: isPending ? Border.all(color: AppColors.warning.withOpacity(0.5), width: 1.5) : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -332,10 +388,13 @@ class _AdminScreenState extends ConsumerState<AdminScreen>
               CircleAvatar(
                 radius: 20,
                 backgroundColor: AppColors.primary.withOpacity(0.12),
-                child: const Icon(
-                  Icons.person_rounded,
-                  color: AppColors.primary,
-                  size: 24,
+                child: Text(
+                  app.fullName.isNotEmpty ? app.fullName[0].toUpperCase() : 'T',
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -345,18 +404,12 @@ class _AdminScreenState extends ConsumerState<AdminScreen>
                   children: [
                     Text(
                       app.fullName,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       app.email,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.secondaryTextLight,
-                      ),
+                      style: const TextStyle(fontSize: 12, color: AppColors.secondaryTextLight),
                     ),
                   ],
                 ),
@@ -366,15 +419,11 @@ class _AdminScreenState extends ConsumerState<AdminScreen>
                 decoration: BoxDecoration(
                   color: statusColor.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: statusColor, width: 0.8),
+                  border: Border.all(color: statusColor.withOpacity(0.3)),
                 ),
                 child: Text(
-                  app.status.title,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: statusColor,
-                  ),
+                  statusText,
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: statusColor),
                 ),
               ),
             ],
@@ -383,18 +432,15 @@ class _AdminScreenState extends ConsumerState<AdminScreen>
           const Divider(height: 1),
           const SizedBox(height: 10),
 
-          // School & City Details
+          // School & City
           Row(
             children: [
-              const Icon(Icons.apartment_rounded, size: 16, color: AppColors.primaryDark),
+              const Icon(Icons.apartment_rounded, size: 16, color: AppColors.secondaryTextLight),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   '${app.school} (${app.city})',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                 ),
               ),
             ],
@@ -481,7 +527,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen>
                       ref.read(adminApplicationsProvider.notifier).approve(app.id);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Преподаватель ${app.fullName} успешно верифицирован!'),
+                          content: Text('Преподаватель ${app.fullName} успешно верифицирован! Доступ открыт.'),
                           backgroundColor: AppColors.success,
                         ),
                       );
@@ -490,6 +536,166 @@ class _AdminScreenState extends ConsumerState<AdminScreen>
                     label: const Text('Одобрить доступ'),
                   ),
                 ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // 4th Tab: ALL REGISTERED USERS OF THE PLATFORM
+  Widget _buildUsersList(List<UserModel> users) {
+    final filtered = users.where((u) {
+      if (_searchQuery.isEmpty) return true;
+      final q = _searchQuery.toLowerCase();
+      return u.name.toLowerCase().contains(q) ||
+          u.email.toLowerCase().contains(q) ||
+          (u.school != null && u.school!.toLowerCase().contains(q)) ||
+          (u.city != null && u.city!.toLowerCase().contains(q)) ||
+          u.role.title.toLowerCase().contains(q) ||
+          (u.teacherCode != null && u.teacherCode!.toLowerCase().contains(q));
+    }).toList();
+
+    if (filtered.isEmpty) {
+      return const Center(
+        child: Text(
+          'Пользователи не найдены',
+          style: TextStyle(color: AppColors.secondaryTextLight),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.all(16),
+      itemCount: filtered.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        final u = filtered[index];
+        return _buildUserCard(u);
+      },
+    );
+  }
+
+  Widget _buildUserCard(UserModel u) {
+    Color roleColor;
+    IconData roleIcon;
+
+    switch (u.role) {
+      case UserRole.admin:
+        roleColor = AppColors.primaryDark;
+        roleIcon = Icons.security_rounded;
+        break;
+      case UserRole.teacher:
+        roleColor = AppColors.teacherAccent;
+        roleIcon = Icons.school_rounded;
+        break;
+      case UserRole.learner:
+        roleColor = AppColors.inclusiveAccent;
+        roleIcon = Icons.accessibility_new_rounded;
+        break;
+      case UserRole.student:
+        roleColor = AppColors.primary;
+        roleIcon = Icons.person_rounded;
+        break;
+    }
+
+    final isTeacher = u.role == UserRole.teacher;
+
+    return AppCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: roleColor.withOpacity(0.12),
+                child: Icon(roleIcon, color: roleColor, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      u.name,
+                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      u.email,
+                      style: const TextStyle(fontSize: 12, color: AppColors.secondaryTextLight),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: roleColor.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: roleColor.withOpacity(0.3)),
+                ),
+                child: Text(
+                  u.role.title,
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: roleColor),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const Divider(height: 1),
+          const SizedBox(height: 8),
+
+          if (u.school != null && u.school!.isNotEmpty) ...[
+            Row(
+              children: [
+                const Icon(Icons.apartment_rounded, size: 15, color: AppColors.secondaryTextLight),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    '${u.school!}${u.city != null && u.city!.isNotEmpty ? " • ${u.city!}" : ""}',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+          ],
+
+          if (isTeacher) ...[
+            Row(
+              children: [
+                const Icon(Icons.verified_outlined, size: 15, color: AppColors.teacherAccent),
+                const SizedBox(width: 6),
+                Text(
+                  'Статус аккредитации: ',
+                  style: const TextStyle(fontSize: 12, color: AppColors.secondaryTextLight),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: (u.isTeacherVerified ? AppColors.success : AppColors.warning).withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    u.isTeacherVerified ? 'Верифицирован' : 'Ожидает одобрения',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: u.isTeacherVerified ? AppColors.success : AppColors.warning,
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                if (u.teacherCode != null)
+                  Text(
+                    u.teacherCode!,
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.secondaryTextLight),
+                  ),
               ],
             ),
           ],

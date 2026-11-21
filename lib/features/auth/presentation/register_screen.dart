@@ -67,6 +67,25 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         );
       }
 
+      // Add to all registered users registry for admin visibility
+      final newRegisteredUser = UserModel(
+        id: 'user-${DateTime.now().millisecondsSinceEpoch}',
+        name: _nameController.text.trim(),
+        email: _emailController.text.trim(),
+        role: _selectedRole,
+        language: _selectedLang,
+        school: _schoolController.text.trim().isNotEmpty
+            ? _schoolController.text.trim()
+            : (_selectedRole == UserRole.teacher ? 'Общеобразовательная школа' : 'Лицей №1'),
+        city: _cityController.text.trim().isNotEmpty ? _cityController.text.trim() : 'г. Астана',
+        subject: isTeacher ? _subjectController.text.trim() : null,
+        teacherCode: isTeacher ? generatedCode : null,
+        isTeacherVerified: !isTeacher,
+        teacherStatus: isTeacher ? 'pending' : 'approved',
+        createdAt: DateTime.now(),
+      );
+      ref.read(registeredUsersProvider.notifier).addUser(newRegisteredUser);
+
       ref
           .read(authNotifierProvider.notifier)
           .register(

@@ -124,80 +124,82 @@ class HomeDashboardScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 14),
 
-              // Gamification Quick Bar (Streak & XP)
-              InkWell(
-                onTap: () => context.push('/achievements'),
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.dividerLight),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE8590C).withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.local_fire_department_rounded, color: Color(0xFFE8590C), size: 16),
-                            const SizedBox(width: 4),
-                            Text(
-                              '$currentStreak ${currentStreak == 1 ? "день" : "дня"} стрик',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFFE8590C),
+              if (role == UserRole.student) ...[
+                // Gamification Quick Bar (Streak & XP - Students only)
+                InkWell(
+                  onTap: () => context.push('/achievements'),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.dividerLight),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE8590C).withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.local_fire_department_rounded, color: Color(0xFFE8590C), size: 16),
+                              const SizedBox(width: 4),
+                              Text(
+                                '$currentStreak ${currentStreak == 1 ? "день" : "дня"} стрик',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFFE8590C),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.bolt_rounded, color: AppColors.primary, size: 16),
-                            const SizedBox(width: 4),
-                            Text(
-                              '$totalXp XP',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.primary,
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.bolt_rounded, color: AppColors.primary, size: 16),
+                              const SizedBox(width: 4),
+                              Text(
+                                '$totalXp XP',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.primary,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      const Spacer(),
-                      const Text(
-                        'Награды',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.primary,
+                        const Spacer(),
+                        const Text(
+                          'Награды',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primary,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 2),
-                      const Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.primary),
-                    ],
+                        const SizedBox(width: 2),
+                        const Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.primary),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 14),
+                const SizedBox(height: 14),
+              ],
 
               // Large Hero Card: EduMind AI
               Container(
@@ -285,11 +287,13 @@ class HomeDashboardScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      role == UserRole.teacher
-                          ? 'Интеллектуальный помощник преподавателя: создавайте планы занятий и тесты в 1 клик.'
-                          : (role == UserRole.learner
-                                ? 'Адаптивное инклюзивное пространство: озвучивание, крупный текст и упрощение тем.'
-                                : 'Ваш образовательный проводник и безопасная эмоциональная поддержка MindCare.'),
+                      role == UserRole.admin
+                          ? 'Центр аккредитации школ, верификации педагогов и управления пользователями платформы.'
+                          : (role == UserRole.teacher
+                              ? 'Интеллектуальный помощник преподавателя: создавайте планы занятий и тесты в 1 клик.'
+                              : (role == UserRole.learner
+                                    ? 'Адаптивное инклюзивное пространство: озвучивание, крупный текст и упрощение тем.'
+                                    : 'Ваш образовательный проводник и безопасная эмоциональная поддержка MindCare.')),
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.9),
                         fontSize: 13,
@@ -307,11 +311,11 @@ class HomeDashboardScreen extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      onPressed: () => context.go('/assistant'),
-                      icon: const Icon(Icons.chat_bubble_outline, size: 18),
-                      label: const Text(
-                        'Открыть AI Ассистент',
-                        style: TextStyle(
+                      onPressed: () => context.push(role == UserRole.admin ? '/admin' : '/assistant'),
+                      icon: Icon(role == UserRole.admin ? Icons.admin_panel_settings_rounded : Icons.chat_bubble_outline, size: 18),
+                      label: Text(
+                        role == UserRole.admin ? 'Открыть Панель Администратора' : 'Открыть AI Ассистент',
+                        style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
                         ),
@@ -345,54 +349,90 @@ class HomeDashboardScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
 
-              // Learning Hub Card
-              _ModuleNavCard(
-                title: 'Интерактивное Обучение',
-                subtitle: 'Учебные курсы и тренажеры знаний',
-                description: 'Алгебра, Python, Физика и Английский язык с практическими заданиями и AI Тьютором.',
-                icon: Icons.menu_book_rounded,
-                color: AppColors.primary,
-                badgeText: 'Обучение & Тесты',
-                onTap: () => context.push('/learning'),
-              ),
-              const SizedBox(height: 12),
-
-              // Daryn Ustaz Card (Teachers & Admin only)
-              if (role == UserRole.teacher || role == UserRole.admin) ...[
+              if (role == UserRole.admin) ...[
+                // Admin Modules (No student clutter)
                 _ModuleNavCard(
-                  title: loc.tr('module_teacher_title'),
-                  subtitle: 'Платформа верифицированных учителей',
-                  description: 'Поурочные планы ҚМЖ, конструктор тестов БЖБ/ТЖБ и проверка школ.',
-                  icon: Icons.school_rounded,
-                  color: AppColors.teacherAccent,
-                  badgeText: 'Преподавателям',
-                  onTap: () => context.push('/teacher/portal'),
+                  title: 'Панель Модерации',
+                  subtitle: 'Заявки учителей на верификацию',
+                  description: 'Проверка преподавательского состава, утверждение или отклонение заявок аккредитации.',
+                  icon: Icons.admin_panel_settings_rounded,
+                  color: AppColors.primaryDark,
+                  badgeText: 'Модерация',
+                  onTap: () => context.push('/admin'),
                 ),
                 const SizedBox(height: 12),
+
+                _ModuleNavCard(
+                  title: 'Реестр Пользователей',
+                  subtitle: 'Все зарегистрированные аккаунты',
+                  description: 'Полный мониторинг учеников, учителей и администраторов с их ролями и статусами.',
+                  icon: Icons.people_alt_rounded,
+                  color: AppColors.primary,
+                  badgeText: 'Пользователи',
+                  onTap: () => context.push('/admin'),
+                ),
+                const SizedBox(height: 12),
+
+                _ModuleNavCard(
+                  title: 'Daryn Ustaz (Аудит)',
+                  subtitle: 'Методические материалы педагогов',
+                  description: 'Просмотр сгенерированных поурочных планов ҚМЖ и тестов БЖБ/ТЖБ.',
+                  icon: Icons.school_rounded,
+                  color: AppColors.teacherAccent,
+                  badgeText: 'Учителям',
+                  onTap: () => context.push('/teacher/portal'),
+                ),
+              ] else ...[
+                // Student & Teacher Standard Modules
+                if (role == UserRole.student) ...[
+                  _ModuleNavCard(
+                    title: 'Интерактивное Обучение',
+                    subtitle: 'Учебные курсы и тренажеры знаний',
+                    description: 'Алгебра, Python, Физика и Английский язык с практическими заданиями и AI Тьютором.',
+                    icon: Icons.menu_book_rounded,
+                    color: AppColors.primary,
+                    badgeText: 'Обучение & Тесты',
+                    onTap: () => context.push('/learning'),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+
+                if (role == UserRole.teacher) ...[
+                  _ModuleNavCard(
+                    title: loc.tr('module_teacher_title'),
+                    subtitle: 'Платформа верифицированных учителей',
+                    description: 'Поурочные планы ҚМЖ, конструктор тестов БЖБ/ТЖБ и проверка школ.',
+                    icon: Icons.school_rounded,
+                    color: AppColors.teacherAccent,
+                    badgeText: 'Преподавателям',
+                    onTap: () => context.push('/teacher/portal'),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+
+                // MindCare Card
+                _ModuleNavCard(
+                  title: loc.tr('module_mindcare_title'),
+                  subtitle: loc.tr('module_mindcare_sub'),
+                  description: loc.tr('module_mindcare_desc'),
+                  icon: Icons.spa_rounded,
+                  color: AppColors.mindcareAccent,
+                  badgeText: 'Поддержка & Mood',
+                  onTap: () => context.push('/mindcare/chat'),
+                ),
+                const SizedBox(height: 12),
+
+                // Inclusive AI Card
+                _ModuleNavCard(
+                  title: loc.tr('module_inclusive_title'),
+                  subtitle: loc.tr('module_inclusive_sub'),
+                  description: loc.tr('module_inclusive_desc'),
+                  icon: Icons.accessibility_new_rounded,
+                  color: AppColors.inclusiveAccent,
+                  badgeText: 'Адаптивность & TTS',
+                  onTap: () => context.push('/inclusive/simplifier'),
+                ),
               ],
-
-              // MindCare Card
-              _ModuleNavCard(
-                title: loc.tr('module_mindcare_title'),
-                subtitle: loc.tr('module_mindcare_sub'),
-                description: loc.tr('module_mindcare_desc'),
-                icon: Icons.spa_rounded,
-                color: AppColors.mindcareAccent,
-                badgeText: 'Поддержка & Mood',
-                onTap: () => context.push('/mindcare/chat'),
-              ),
-              const SizedBox(height: 12),
-
-              // Inclusive AI Card
-              _ModuleNavCard(
-                title: loc.tr('module_inclusive_title'),
-                subtitle: loc.tr('module_inclusive_sub'),
-                description: loc.tr('module_inclusive_desc'),
-                icon: Icons.accessibility_new_rounded,
-                color: AppColors.inclusiveAccent,
-                badgeText: 'Адаптивность & TTS',
-                onTap: () => context.push('/inclusive/simplifier'),
-              ),
 
               const SizedBox(height: 28),
             ],

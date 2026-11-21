@@ -11,6 +11,8 @@ class StorageService {
   }) : _secureStorage = secureStorage,
        _prefs = prefs;
 
+  SharedPreferences get prefs => _prefs;
+
   static const String _tokenKey = 'auth_token';
   static const String _userKey = 'cached_user_json';
   static const String _langKey = 'user_language';

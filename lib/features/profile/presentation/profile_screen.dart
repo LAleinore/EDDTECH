@@ -109,79 +109,110 @@ class ProfileScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
 
-            // Gamification & Streak Stats Card
-            InkWell(
-              onTap: () => context.push('/achievements'),
-              borderRadius: BorderRadius.circular(16),
-              child: AppCard(
+            if (user?.role == UserRole.student) ...[
+              // Gamification & Streak Stats Card (Students only)
+              InkWell(
+                onTap: () => context.push('/achievements'),
+                borderRadius: BorderRadius.circular(16),
+                child: AppCard(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      Column(
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.local_fire_department_rounded, color: Color(0xFFE8590C), size: 20),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${streak.currentStreak} ${streak.currentStreak == 1 ? "день" : "дня"}',
+                                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          const Text(
+                            'Стрик',
+                            style: TextStyle(fontSize: 12, color: AppColors.secondaryTextLight),
+                          ),
+                        ],
+                      ),
+                      Container(height: 32, width: 1, color: AppColors.dividerLight),
+                      Column(
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.bolt_rounded, color: AppColors.primary, size: 20),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${streak.totalXp}',
+                                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          const Text(
+                            'Очки XP',
+                            style: TextStyle(fontSize: 12, color: AppColors.secondaryTextLight),
+                          ),
+                        ],
+                      ),
+                      Container(height: 32, width: 1, color: AppColors.dividerLight),
+                      Column(
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.military_tech_rounded, color: AppColors.warning, size: 20),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Ур. ${streak.level}',
+                                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          const Text(
+                            'Уровень',
+                            style: TextStyle(fontSize: 12, color: AppColors.secondaryTextLight),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ] else if (user?.role == UserRole.admin) ...[
+              AppCard(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                color: AppColors.primaryDark.withOpacity(0.08),
+                border: Border.all(color: AppColors.primaryDark.withOpacity(0.25)),
+                child: const Row(
                   children: [
-                    Column(
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.local_fire_department_rounded, color: Color(0xFFE8590C), size: 20),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${streak.currentStreak} ${streak.currentStreak == 1 ? "день" : "дня"}',
-                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 2),
-                        const Text(
-                          'Стрик',
-                          style: TextStyle(fontSize: 12, color: AppColors.secondaryTextLight),
-                        ),
-                      ],
-                    ),
-                    Container(height: 32, width: 1, color: AppColors.dividerLight),
-                    Column(
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.bolt_rounded, color: AppColors.primary, size: 20),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${streak.totalXp}',
-                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 2),
-                        const Text(
-                          'Очки XP',
-                          style: TextStyle(fontSize: 12, color: AppColors.secondaryTextLight),
-                        ),
-                      ],
-                    ),
-                    Container(height: 32, width: 1, color: AppColors.dividerLight),
-                    Column(
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.military_tech_rounded, color: AppColors.warning, size: 20),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Ур. ${streak.level}',
-                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 2),
-                        const Text(
-                          'Уровень',
-                          style: TextStyle(fontSize: 12, color: AppColors.secondaryTextLight),
-                        ),
-                      ],
+                    Icon(Icons.security_rounded, color: AppColors.primaryDark, size: 24),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Права: Главный Администратор платформы',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primaryDark),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Модерация заявок учителей, аккредитация школ и реестр пользователей.',
+                            style: TextStyle(fontSize: 11, color: AppColors.secondaryTextLight),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
+            ],
 
             // Language Selector Card
             AppCard(
