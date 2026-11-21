@@ -317,6 +317,56 @@ class ProfileScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 24),
 
+            // Admin Panel Shortcut Card
+            AppCard(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              onTap: () => context.push('/admin'),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryDark.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.admin_panel_settings_rounded,
+                      color: AppColors.primaryDark,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Панель Администратора',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
+                        ),
+                        Text(
+                          'Модерация и верификация преподавателей',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.secondaryTextLight,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 14,
+                    color: AppColors.secondaryTextLight,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
             // Logout Button
             SecondaryButton(
               text: loc.tr('logout'),

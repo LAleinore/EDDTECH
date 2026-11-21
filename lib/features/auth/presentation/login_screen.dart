@@ -40,6 +40,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  void _loginAsAdmin() {
+    _loginController.text = 'admin@edumind.kz';
+    _passwordController.text = 'admin2026';
+    ref.read(authNotifierProvider.notifier).login(
+          email: 'admin@edumind.kz',
+          password: 'admin2026',
+        );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authNotifierProvider);
@@ -258,6 +267,152 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           style: const TextStyle(
                             fontWeight: FontWeight.w700,
                             color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+
+                  // Divider
+                  const Row(
+                    children: [
+                      Expanded(child: Divider(color: AppColors.dividerLight)),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 12),
+                        child: Text(
+                          'Быстрый доступ / Панели',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.secondaryTextLight,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      Expanded(child: Divider(color: AppColors.dividerLight)),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Admin Quick Access Banner ("Плашка админки")
+                  InkWell(
+                    onTap: _loginAsAdmin,
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryDark.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: AppColors.primaryDark.withOpacity(0.3),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryDark,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.admin_panel_settings_rounded,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      'Панель Администратора',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 14,
+                                        color: AppColors.primaryDark,
+                                      ),
+                                    ),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      '1 КЛИК',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: AppColors.primaryDark,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 2),
+                                Text(
+                                  'Модерация и верификация школ и учителей',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.secondaryTextLight,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            size: 15,
+                            color: AppColors.primaryDark,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Quick login chips for Student & Teacher
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            side: BorderSide(color: AppColors.primary.withOpacity(0.3)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onPressed: () {
+                            _loginController.text = 'student@edumind.ai';
+                            _passwordController.text = 'Password123!';
+                            _submit();
+                          },
+                          icon: const Icon(Icons.school_outlined, size: 16, color: AppColors.primary),
+                          label: const Text(
+                            'Учащийся',
+                            style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            side: BorderSide(color: AppColors.teacherAccent.withOpacity(0.3)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onPressed: () {
+                            _loginController.text = 'teacher@edumind.ai';
+                            _passwordController.text = 'Password123!';
+                            _submit();
+                          },
+                          icon: const Icon(Icons.psychology_outlined, size: 16, color: AppColors.teacherAccent),
+                          label: const Text(
+                            'Учитель',
+                            style: TextStyle(fontSize: 12, color: AppColors.teacherAccent, fontWeight: FontWeight.bold),
                           ),
                         ),
                       ),

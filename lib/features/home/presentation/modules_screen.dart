@@ -138,29 +138,27 @@ class ModulesScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 20),
 
-            // 5. Admin Panel (if admin)
-            if (isAdmin) ...[
-              _ModuleCategoryCard(
-                title: 'Панель Администратора',
-                subtitle: 'Модерация и аккредитация школ',
-                description: 'Проверка преподавательского состава, утверждение заявок и аналитика системы.',
-                icon: Icons.admin_panel_settings_rounded,
-                color: AppColors.primaryDark,
-                actions: [
-                  _ActionItem(
-                    'Модерация заявок учителей',
-                    Icons.how_to_reg_rounded,
-                    () => context.push('/admin'),
-                  ),
-                  _ActionItem(
-                    'Реестр подтвержденных школ',
-                    Icons.apartment_rounded,
-                    () => context.push('/admin'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-            ],
+            // 5. Admin Panel
+            _ModuleCategoryCard(
+              title: 'Панель Администратора',
+              subtitle: 'Модерация и аккредитация школ',
+              description: 'Проверка преподавательского состава, утверждение заявок и аналитика системы.',
+              icon: Icons.admin_panel_settings_rounded,
+              color: AppColors.primaryDark,
+              actions: [
+                _ActionItem(
+                  'Модерация заявок учителей',
+                  Icons.how_to_reg_rounded,
+                  () => context.push('/admin'),
+                ),
+                _ActionItem(
+                  'Реестр подтвержденных школ',
+                  Icons.apartment_rounded,
+                  () => context.push('/admin'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
           ],
         ),
       ),
