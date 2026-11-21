@@ -21,6 +21,8 @@ class SimplifiedResultModel {
   final List<String> stepByStepGuide;
   final List<KeyConceptModel> keyConcepts;
   final List<String> practicalExamples;
+  final String? videoTitle;
+  final String? videoUrl;
 
   SimplifiedResultModel({
     required this.title,
@@ -29,11 +31,18 @@ class SimplifiedResultModel {
     required this.stepByStepGuide,
     required this.keyConcepts,
     required this.practicalExamples,
+    this.videoTitle,
+    this.videoUrl,
   });
 
   factory SimplifiedResultModel.fromMap(Map<String, dynamic> map) {
+    final title = map['title'] ?? 'Адаптированный материал';
+    final videoQuery = map['videoQuery'] ?? map['video_query'] ?? title;
+    final defaultVideoUrl =
+        'https://www.youtube.com/results?search_query=${Uri.encodeComponent('$videoQuery детям анимация')}';
+
     return SimplifiedResultModel(
-      title: map['title'] ?? 'Адаптированный материал',
+      title: title,
       simpleExplanation:
           map['simpleExplanation'] ?? map['simple_explanation'] ?? '',
       summary: map['summary'] ?? '',
@@ -47,6 +56,8 @@ class SimplifiedResultModel {
       practicalExamples: List<String>.from(
         map['practicalExamples'] ?? map['practical_examples'] ?? [],
       ),
+      videoTitle: map['videoTitle'] ?? map['video_title'] ?? 'Обучающий видеоролик: $title',
+      videoUrl: map['videoUrl'] ?? map['video_url'] ?? defaultVideoUrl,
     );
   }
 
@@ -57,5 +68,7 @@ class SimplifiedResultModel {
     'stepByStepGuide': stepByStepGuide,
     'keyConcepts': keyConcepts.map((k) => k.toMap()).toList(),
     'practicalExamples': practicalExamples,
+    'videoTitle': videoTitle,
+    'videoUrl': videoUrl,
   };
 }

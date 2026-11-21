@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../core/services/tts_service.dart';
 import '../../../core/widgets/buttons.dart';
@@ -55,6 +56,19 @@ class _AiSimplifierScreenState extends ConsumerState<AiSimplifierScreen> {
     } else {
       _ttsService.speak(text);
       setState(() {});
+    }
+  }
+
+  Future<void> _openVideo(String? url) async {
+    if (url == null || url.isEmpty) return;
+    final uri = Uri.parse(url);
+    try {
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched) {
+        await launchUrl(uri);
+      }
+    } catch (_) {
+      await launchUrl(uri);
     }
   }
 
@@ -167,7 +181,7 @@ class _AiSimplifierScreenState extends ConsumerState<AiSimplifierScreen> {
                 ),
                 const SizedBox(height: 14),
 
-                // Step-by-step
+                // Step-by-step Guide
                 AppCard(
                   padding: const EdgeInsets.all(18),
                   child: Column(
@@ -232,6 +246,161 @@ class _AiSimplifierScreenState extends ConsumerState<AiSimplifierScreen> {
                     ],
                   ),
                 ),
+
+                // Educational Video Explainer Card (Дополнительный видеоролик)
+                if (_result!.videoUrl != null && _result!.videoUrl!.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  AppCard(
+                    padding: const EdgeInsets.all(18),
+                    border: Border.all(color: Colors.red.withOpacity(0.3)),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.red.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(
+                                Icons.play_circle_fill_rounded,
+                                color: Colors.red,
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Обучающее видео по теме',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Наглядная анимация и видеоразбор',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: AppColors.secondaryTextLight,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Interactive Video Thumbnail Banner
+                        InkWell(
+                          onTap: () => _openVideo(_result!.videoUrl),
+                          borderRadius: BorderRadius.circular(14),
+                          child: Container(
+                            width: double.infinity,
+                            height: 150,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF1E272E), Color(0xFF0F1418)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: Colors.red.withOpacity(0.4),
+                                width: 1.5,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                Positioned(
+                                  bottom: 12,
+                                  left: 14,
+                                  right: 14,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        _result!.videoTitle ?? 'Смотреть обучающий ролик',
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      const Text(
+                                        'YouTube • Обучающая анимация для детей',
+                                        style: TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                // Big Play Button
+                                Container(
+                                  width: 54,
+                                  height: 54,
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.red.withOpacity(0.5),
+                                        blurRadius: 16,
+                                        spreadRadius: 2,
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Icon(
+                                    Icons.play_arrow_rounded,
+                                    color: Colors.white,
+                                    size: 34,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Action Button
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size(double.infinity, 44),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onPressed: () => _openVideo(_result!.videoUrl),
+                          icon: const Icon(Icons.smart_display_rounded, size: 20),
+                          label: const Text(
+                            'Открыть видео в YouTube',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ],
           ),
