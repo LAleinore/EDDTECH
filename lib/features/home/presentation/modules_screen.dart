@@ -15,6 +15,7 @@ class ModulesScreen extends ConsumerWidget {
     final user = ref.watch(authNotifierProvider).user;
     final loc = AppLocalizations(AppLanguage.fromCode(user?.language ?? 'ru'));
     final isAdmin = user?.role == UserRole.admin;
+    final isTeacher = user?.role == UserRole.teacher || isAdmin;
 
     return Scaffold(
       appBar: AppBar(title: Text(loc.tr('nav_modules'))),
@@ -44,42 +45,44 @@ class ModulesScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 20),
 
-            // 2. Daryn Ustaz (Teacher Portal)
-            _ModuleCategoryCard(
-              title: loc.tr('module_teacher_title'),
-              subtitle: 'Платформа верифицированных учителей',
-              description: 'Аккредитованная рабочая среда преподавателя: генерация ҚМЖ, БЖБ/ТЖБ и адаптация тем.',
-              icon: Icons.school_rounded,
-              color: AppColors.teacherAccent,
-              actions: [
-                _ActionItem(
-                  'Портал преподавателя',
-                  Icons.dashboard_customize_rounded,
-                  () => context.push('/teacher/portal'),
-                ),
-                _ActionItem(
-                  'Генератор уроков (ҚМЖ)',
-                  Icons.menu_book,
-                  () => context.push('/teacher/lesson-generator'),
-                ),
-                _ActionItem(
-                  'Конструктор тестов (БЖБ/ТЖБ)',
-                  Icons.quiz,
-                  () => context.push('/teacher/quiz-generator'),
-                ),
-                _ActionItem(
-                  'Объяснить сложную тему',
-                  Icons.lightbulb_outline,
-                  () => context.push('/teacher/explain'),
-                ),
-                _ActionItem(
-                  'Архив материалов',
-                  Icons.history,
-                  () => context.push('/teacher/history'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
+            // 2. Daryn Ustaz (Teacher Portal - Teachers & Admin only)
+            if (isTeacher) ...[
+              _ModuleCategoryCard(
+                title: loc.tr('module_teacher_title'),
+                subtitle: 'Платформа верифицированных учителей',
+                description: 'Аккредитованная рабочая среда преподавателя: генерация ҚМЖ, БЖБ/ТЖБ и адаптация тем.',
+                icon: Icons.school_rounded,
+                color: AppColors.teacherAccent,
+                actions: [
+                  _ActionItem(
+                    'Портал преподавателя',
+                    Icons.dashboard_customize_rounded,
+                    () => context.push('/teacher/portal'),
+                  ),
+                  _ActionItem(
+                    'Генератор уроков (ҚМЖ)',
+                    Icons.menu_book,
+                    () => context.push('/teacher/lesson-generator'),
+                  ),
+                  _ActionItem(
+                    'Конструктор тестов (БЖБ/ТЖБ)',
+                    Icons.quiz,
+                    () => context.push('/teacher/quiz-generator'),
+                  ),
+                  _ActionItem(
+                    'Объяснить сложную тему',
+                    Icons.lightbulb_outline,
+                    () => context.push('/teacher/explain'),
+                  ),
+                  _ActionItem(
+                    'Архив материалов',
+                    Icons.history,
+                    () => context.push('/teacher/history'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+            ],
 
             // 3. MindCare
             _ModuleCategoryCard(

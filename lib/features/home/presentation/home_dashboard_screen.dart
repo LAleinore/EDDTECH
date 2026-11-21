@@ -278,17 +278,19 @@ class HomeDashboardScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
 
-              // Daryn Ustaz Card
-              _ModuleNavCard(
-                title: loc.tr('module_teacher_title'),
-                subtitle: 'Платформа верифицированных учителей',
-                description: 'Поурочные планы ҚМЖ, конструктор тестов БЖБ/ТЖБ и проверка школ.',
-                icon: Icons.school_rounded,
-                color: AppColors.teacherAccent,
-                badgeText: 'Преподавателям',
-                onTap: () => context.push('/teacher/portal'),
-              ),
-              const SizedBox(height: 12),
+              // Daryn Ustaz Card (Teachers & Admin only)
+              if (role == UserRole.teacher || role == UserRole.admin) ...[
+                _ModuleNavCard(
+                  title: loc.tr('module_teacher_title'),
+                  subtitle: 'Платформа верифицированных учителей',
+                  description: 'Поурочные планы ҚМЖ, конструктор тестов БЖБ/ТЖБ и проверка школ.',
+                  icon: Icons.school_rounded,
+                  color: AppColors.teacherAccent,
+                  badgeText: 'Преподавателям',
+                  onTap: () => context.push('/teacher/portal'),
+                ),
+                const SizedBox(height: 12),
+              ],
 
               // MindCare Card
               _ModuleNavCard(
